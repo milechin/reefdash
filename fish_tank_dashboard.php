@@ -12,9 +12,14 @@
 $v = file_exists('tank_data.js') ? filemtime('tank_data.js') : time();
 $targetsFile = __DIR__ . '/targets.json';
 $savedTargets = file_exists($targetsFile) ? (json_decode(file_get_contents($targetsFile), true) ?: []) : [];
+$tanksFile = __DIR__ . '/tanks.json';
+$tanks = file_exists($tanksFile) ? (json_decode(file_get_contents($tanksFile), true) ?: []) : [];
 ?>
 <script src="tank_data.js?v=<?php echo $v; ?>"></script>
-<script>const SAVED_TARGETS = <?php echo json_encode($savedTargets); ?>;</script>
+<script>
+const SAVED_TARGETS = <?php echo json_encode($savedTargets); ?>;
+const TANK_CONFIGS  = <?php echo json_encode($tanks); ?>;
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -372,15 +377,11 @@ tr:last-child td { border:none; }
 
   <!-- TABS -->
   <div class="tank-tabs">
-    <button class="tab-btn active" onclick="switchTab('display',this)">
-      <span class="dot"></span>Display Tank
+    <?php foreach ($tanks as $i => $tank): ?>
+    <button class="tab-btn<?php echo $i === 0 ? ' active' : ''; ?>" onclick="switchTab('<?php echo htmlspecialchars($tank['key']); ?>',this)">
+      <span class="dot"></span><?php echo htmlspecialchars($tank['label']); ?>
     </button>
-    <button class="tab-btn" onclick="switchTab('qrt',this)">
-      <span class="dot"></span>QRT
-    </button>
-    <button class="tab-btn" onclick="switchTab('laurens',this)">
-      <span class="dot"></span>Lauren's
-    </button>
+    <?php endforeach; ?>
     <button class="tab-btn" onclick="switchTab('equipment',this)">
       <span class="dot"></span>Equipment
     </button>
@@ -479,12 +480,9 @@ tr:last-child td { border:none; }
     </div>
   </div>
 
-  <!-- DISPLAY PANEL -->
-  <div class="panel active" id="panel-display"></div>
-  <!-- QRT PANEL -->
-  <div class="panel" id="panel-qrt"></div>
-  <!-- LAURENS PANEL -->
-  <div class="panel" id="panel-laurens"></div>
+  <?php foreach ($tanks as $i => $tank): ?>
+  <div class="panel<?php echo $i === 0 ? ' active' : ''; ?>" id="panel-<?php echo htmlspecialchars($tank['key']); ?>"></div>
+  <?php endforeach; ?>
 
   <!-- EQUIPMENT PANEL -->
   <div class="panel" id="panel-equipment">
@@ -603,8 +601,11 @@ function updateWcToggleVisibility(tankKey) {
 Chart.defaults.color='#5a8aaa';
 Chart.defaults.borderColor='rgba(0,212,255,0.07)';
 
+// ── TANK NAME LOOKUP (from tanks.json via TANK_CONFIGS)
+const TANK_NAMES = Object.fromEntries(TANK_CONFIGS.map(t => [t.key, t.label]));
+
 // ── DATE RANGE STATE
-let currentTankKey = 'display';
+let currentTankKey = TANK_CONFIGS[0].key;
 let dateFrom = null; // null = no filter
 let dateTo   = null;
 
@@ -1044,8 +1045,7 @@ function getTestDatesForTank(tankKey) {
 }
 
 function openLogTest() {
-  const tankNames = {display:'Display Tank', qrt:'QRT', laurens:"Lauren's"};
-  document.getElementById('logTestTankLabel').textContent = tankNames[currentTankKey] || currentTankKey;
+  document.getElementById('logTestTankLabel').textContent = TANK_NAMES[currentTankKey] || currentTankKey;
 
   // Build input fields
   const container = document.getElementById('logTestFields');
@@ -1185,8 +1185,7 @@ function submitLogTest() {
 let _logWCFlatpickr = null;
 
 function openLogWC() {
-  const tankNames = {display:'Display Tank', qrt:'QRT', laurens:"Lauren's"};
-  document.getElementById('logWCTankLabel').textContent = tankNames[currentTankKey] || currentTankKey;
+  document.getElementById('logWCTankLabel').textContent = TANK_NAMES[currentTankKey] || currentTankKey;
   document.getElementById('logWCMsg').textContent = '';
   document.getElementById('logWCModal').classList.add('open');
 
@@ -1487,8 +1486,8 @@ RAW.log.forEach(e=>{
 });
 
 // ── TAB SWITCHING
-let initialized = { display:false, qrt:false, laurens:false };
-const TANK_TABS = new Set(['display','qrt','laurens']);
+const initialized = Object.fromEntries(TANK_CONFIGS.map(t => [t.key, false]));
+const TANK_TABS = new Set(TANK_CONFIGS.map(t => t.key));
 
 function switchTab(key, btn) {
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -1528,7 +1527,7 @@ function switchTab(key, btn) {
   } else if (key === 'help') {
     document.getElementById('lastBadge').innerHTML = `<strong>Fish Tank Log</strong>`;
     // Populate the last date on the help page from the most recent reading across all tanks
-    const dates = ['display','qrt','laurens'].map(k => RAW[k].latest.lastDate).filter(Boolean).sort();
+    const dates = TANK_CONFIGS.map(t => RAW[t.key]?.latest?.lastDate).filter(Boolean).sort();
     const latestDate = dates[dates.length - 1] || '—';
     const el = document.getElementById('helpLastDate');
     if (el) el.textContent = latestDate;
@@ -1537,18 +1536,18 @@ function switchTab(key, btn) {
   }
 }
 
-// init display tab — default to 90 days
-currentTankKey = 'display';
+// init first tank tab — default to 90 days
+currentTankKey = TANK_CONFIGS[0].key;
 const _initRange = getDateRange();
 dateTo   = _initRange.max;
 dateFrom = subtractDays(_initRange.max, 90);
 document.getElementById('dateFrom').value = dateFrom;
 document.getElementById('dateTo').value   = dateTo;
-buildTankPanel('display','display');
-initialized.display = true;
-document.getElementById('lastBadge').innerHTML = `Last: <strong>${RAW.display.latest.lastDate}</strong>`;
-updateWcToggleVisibility('display');
-updateDoseToggleVisibility('display');
+buildTankPanel(currentTankKey, currentTankKey);
+initialized[currentTankKey] = true;
+document.getElementById('lastBadge').innerHTML = `Last: <strong>${RAW[currentTankKey].latest.lastDate}</strong>`;
+updateWcToggleVisibility(currentTankKey);
+updateDoseToggleVisibility(currentTankKey);
 </script>
 </body>
 </html>

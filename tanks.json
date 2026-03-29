@@ -1,0 +1,17 @@
+[
+  {
+    "key":   "display",
+    "label": "Display Tank",
+    "emoji": "🐠"
+  },
+  {
+    "key":   "qrt",
+    "label": "QRT",
+    "emoji": "🔬"
+  },
+  {
+    "key":   "laurens",
+    "label": "Lauren's",
+    "emoji": "🌊"
+  }
+]
