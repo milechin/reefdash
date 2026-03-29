@@ -4,11 +4,12 @@
     "context": "..",
     "dockerfile": "../Dockerfile"
   },
-"forwardPorts": [80],
+  "forwardPorts": [80],
   "portsAttributes": {
     "80": {
       "label": "ReefDash",
       "onAutoForward": "openBrowser"
     }
-  }
+  },
+  "postStartCommand": "apache2-foreground &"
 }
