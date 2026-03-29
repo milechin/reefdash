@@ -207,6 +207,17 @@ tr:last-child td { border:none; }
 .log-text { font-size:12px; color:var(--dim); line-height:1.5; }
 .log-init { font-family:'Space Mono',monospace; font-size:9px; padding:2px 7px; border-radius:4px; background:rgba(167,139,250,0.1); color:var(--anemone); height:fit-content; white-space:nowrap; }
 
+/* BLOG */
+.blog-entry { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.04); align-items:flex-start; }
+.blog-entry:last-child { border:none; }
+.blog-date { font-family:'Space Mono',monospace; font-size:10px; color:#a78bfa; min-width:88px; padding-top:2px; }
+.blog-text { font-size:13px; color:var(--text); line-height:1.6; flex:1; white-space:pre-wrap; }
+.blog-edit-btn { font-family:'Space Mono',monospace; font-size:9px; padding:2px 8px; border-radius:4px; background:rgba(167,139,250,0.1); border:1px solid rgba(167,139,250,0.3); color:#a78bfa; cursor:pointer; white-space:nowrap; flex-shrink:0; }
+.blog-edit-btn:hover { background:rgba(167,139,250,0.2); }
+.blog-empty { font-family:'Space Mono',monospace; font-size:11px; color:var(--dim); padding:16px 0; }
+.blog-textarea { width:100%; min-height:120px; background:var(--glass); border:1px solid rgba(167,139,250,0.3); border-radius:8px; color:var(--text); font-size:13px; font-family:'DM Sans',sans-serif; padding:10px 12px; resize:vertical; box-sizing:border-box; line-height:1.6; }
+.blog-textarea:focus { outline:none; border-color:#a78bfa; }
+
 /* TARGETS */
 .targets-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.03); font-size:12px; }
 .targets-row:last-child { border:none; }
@@ -480,6 +491,30 @@ tr:last-child td { border:none; }
     </div>
   </div>
 
+  <!-- BLOG MODAL -->
+  <div class="modal-overlay" id="blogModal" onclick="if(event.target===this)closeBlog()">
+    <div class="modal" style="max-width:500px">
+      <div class="modal-header">
+        <h2>📓 <span id="blogModalTitle">Blog Entry</span></h2>
+        <button class="modal-close" onclick="closeBlog()">✕</button>
+      </div>
+      <div style="padding:4px 0 12px; font-family:'Space Mono',monospace; font-size:11px; color:var(--dim);">
+        Tank: <span id="blogTankLabel" style="color:#a78bfa"></span>
+      </div>
+      <div class="target-row-edit" style="margin-bottom:14px;">
+        <label style="color:var(--text);font-weight:600;">📅 Date</label>
+        <input type="text" class="target-num-input" id="blogDate" placeholder="Select a date" readonly style="flex:1;max-width:none;border-color:rgba(167,139,250,0.4);cursor:pointer;">
+      </div>
+      <textarea class="blog-textarea" id="blogText" placeholder="Write your notes for the day…"></textarea>
+      <div id="blogMsg" style="font-family:'Space Mono',monospace;font-size:11px;min-height:18px;margin-top:8px;"></div>
+      <div class="modal-footer">
+        <button class="btn-reset" onclick="closeBlog()">Cancel</button>
+        <button id="blogDeleteBtn" class="btn-reset" style="display:none;border-color:rgba(231,76,60,0.4);color:#e74c3c;" onclick="deleteBlogEntry()">🗑 Delete</button>
+        <button class="btn-apply" style="background:rgba(167,139,250,0.15);border-color:#a78bfa;color:#c4b5fd;" onclick="submitBlog()">Save Entry</button>
+      </div>
+    </div>
+  </div>
+
   <?php foreach ($tanks as $i => $tank): ?>
   <div class="panel<?php echo $i === 0 ? ' active' : ''; ?>" id="panel-<?php echo htmlspecialchars($tank['key']); ?>"></div>
   <?php endforeach; ?>
@@ -516,43 +551,61 @@ tr:last-child td { border:none; }
       <div class="help-card">
         <div class="help-card-icon">🗂️</div>
         <h3>Tank Tabs</h3>
-        <p>Switch between <strong>Display Tank</strong>, <strong>QRT</strong>, and <strong>Lauren's</strong> to view each tank's water chemistry independently. The <strong>Equipment</strong> tab shows warranty expiry for all hardware. The <strong>Log</strong> tab shows recent activity entries. Switching tabs resets the date range to the last 90 days for that tank.</p>
+        <p>Switch between tank tabs to view each tank's water chemistry independently. The <strong>Equipment</strong> tab shows warranty expiry for all hardware. The <strong>Log</strong> tab shows recent activity entries. Switching tabs resets the date range to the last 90 days for that tank.</p>
       </div>
 
       <div class="help-card">
         <div class="help-card-icon">🔢</div>
         <h3>Status Cards</h3>
-        <p>The cards at the top of each tank tab show key information at a glance. <strong>💧 Last Water Change</strong> and <strong>🔬 Last Water Test</strong> show how many days have passed, with a status badge — <span style="color:#2ecc71">● Recent</span> (≤7 days), <span style="color:#f39c12">▲ Due Soon</span> (8–14 days), or <span style="color:#e74c3c">▲ Overdue</span> (&gt;14 days). The eight parameter cards show the most recent recorded value, colour-coded against the current target range.</p>
+        <p>Each tank opens with a <strong>Maintenance</strong> row — <strong>💧 Last Water Change</strong> and <strong>🔬 Last Water Test</strong> — showing days elapsed and a status badge: <span style="color:#2ecc71">● Recent</span> (≤7 days), <span style="color:#f39c12">▲ Due Soon</span> (8–14 days), or <span style="color:#e74c3c">▲ Overdue</span> (&gt;14 days). The <strong>Current Parameters</strong> section shows the most recent reading for each parameter colour-coded against the target range.</p>
       </div>
 
       <div class="help-card">
         <div class="help-card-icon">📅</div>
         <h3>Date Range</h3>
-        <p>The control bar between the status cards and charts lets you filter the date window shown across all six plots simultaneously. Use the <strong>From / To</strong> date pickers for a custom range, or the quick presets — <strong>90d</strong> (default), <strong>6mo</strong>, <strong>1yr</strong>, and <strong>All</strong>. All charts always share the same x-axis so readings line up across parameters.</p>
+        <p>The control bar between the status cards and charts filters the date window shown across all plots simultaneously. Use the <strong>From / To</strong> date pickers for a custom range, or the quick presets — <strong>90d</strong> (default), <strong>6mo</strong>, <strong>1yr</strong>, and <strong>All</strong>. All charts always share the same x-axis so readings line up across parameters.</p>
       </div>
 
       <div class="help-card">
         <div class="help-card-icon">📊</div>
         <h3>Parameter Charts</h3>
-        <p>Each tank tab shows six trend charts: <strong>Temperature</strong>, <strong>pH</strong>, <strong>Salinity</strong>, <strong>Alkalinity</strong>, <strong>Calcium</strong>, and <strong>Phosphate</strong>. The <span style="color:rgba(46,204,113,0.9)">green dashed band</span> marks the target range. A dot appears on each date a reading was recorded; dates with no measurement for that parameter show no dot but the line spans the gap. All charts share identical x-axis positions so point counts are consistent.</p>
+        <p>Seven charts are shown per tank: <strong>Temperature</strong>, <strong>pH</strong>, <strong>Salinity</strong>, <strong>Alkalinity</strong>, <strong>Calcium</strong>, <strong>Phosphate</strong>, and <strong>Nitrate</strong>. The <span style="color:rgba(46,204,113,0.9)">green shaded band</span> marks the target range. All charts share the same x-axis. When blog entries exist in the current window, a <strong style="color:rgba(167,139,250,0.9)">▼ Blog Entry</strong> legend appears — purple triangles at the top of each chart are clickable to open that entry.</p>
       </div>
 
       <div class="help-card">
         <div class="help-card-icon">🟦</div>
         <h3>Water Changes</h3>
-        <p>Toggle <strong>Water Changes</strong> in the control bar to overlay dashed blue vertical lines on every chart simultaneously, marking each recorded water change event. Display Tank and QRT have full histories parsed from the Log sheet. Lines are aligned identically across all charts so you can easily correlate water changes with parameter shifts.</p>
+        <p>Toggle <strong>Water Changes</strong> in the control bar to overlay dashed blue vertical lines on every chart, marking each recorded water change event. Use the <strong>+ LOG</strong> button on the Last Water Change card to add or delete entries. Selecting an existing date shows a <strong>🗑 Delete Entry</strong> button.</p>
       </div>
 
       <div class="help-card">
         <div class="help-card-icon">🩷</div>
         <h3>All For Reef Dose</h3>
-        <p>Toggle <strong>All For Reef Dose</strong> to add a coral-coloured stepped line to the <strong>pH</strong>, <strong>Alkalinity</strong>, and <strong>Calcium</strong> charts, with its own right-hand axis in ml/day. The line is stepped — it holds flat at the last recorded dose until a new value is logged, reflecting the daily rate between entries. Dose data is available from November 2025 onward.</p>
+        <p>Toggle <strong>All For Reef Dose</strong> to add a coral-coloured stepped line to the <strong>pH</strong>, <strong>Alkalinity</strong>, and <strong>Calcium</strong> charts with its own right-hand axis in ml/day. The line holds flat at the last recorded dose until a new value is logged. Dose is logged via <strong>+ Log Test</strong> in the Current Parameters bar.</p>
+      </div>
+
+      <div class="help-card">
+        <div class="help-card-icon">🔬</div>
+        <h3>Logging a Water Test</h3>
+        <p>Click <strong>+ Log Test</strong> in the Current Parameters bar. Select a date — <strong>cyan dots</strong> on the calendar indicate days with existing entries, which are loaded automatically for editing. Leave any field blank to skip it. Includes fields for all 8 parameters plus <strong>AFR Dose</strong>. On save the charts refresh immediately.</p>
+      </div>
+
+      <div class="help-card">
+        <div class="help-card-icon">💧</div>
+        <h3>Logging a Water Change</h3>
+        <p>Click <strong>+ LOG</strong> on the Last Water Change card. Select a date — <strong>blue dots</strong> indicate existing water change dates. Selecting an existing date reveals a <strong>🗑 Delete Entry</strong> button. Saved changes update the chart annotations and the Last Water Change KPI card immediately.</p>
+      </div>
+
+      <div class="help-card">
+        <div class="help-card-icon">📓</div>
+        <h3>Daily Log</h3>
+        <p>Each tank has a <strong>Daily Log</strong> section at the bottom of its panel for free-text notes. Click <strong>+ Add Entry</strong> to write a note, or <strong>✎ Edit</strong> on an existing entry to update or delete it. Entries in the current date window appear as <strong style="color:rgba(167,139,250,0.9)">purple ▼ triangles</strong> at the top of every chart — click a triangle to view or edit that entry directly.</p>
       </div>
 
       <div class="help-card">
         <div class="help-card-icon">⚙️</div>
         <h3>Editing Targets</h3>
-        <p>Click <strong>⚙ Targets</strong> to open the target range editor. Each parameter has editable <strong>Min</strong> and <strong>Max</strong> fields. Clicking <strong>Apply</strong> immediately updates the green target bands on all charts and refreshes the KPI status badges. <strong>Reset Defaults</strong> restores the original salt mix targets without closing the editor.</p>
+        <p>Click <strong>⚙ Targets</strong> to open the target range editor. Each parameter has editable <strong>Min</strong> and <strong>Max</strong> fields. Clicking <strong>Apply</strong> saves the values to <strong>targets.json</strong> so they persist across page loads and immediately updates all chart bands and KPI badges. <strong>Reset Defaults</strong> restores the original salt mix targets.</p>
       </div>
 
       <div class="help-card">
@@ -734,6 +787,25 @@ function makeChart(id, data, valueKey, color, tMin, tMax, canShowDose, masterLab
     });
   }
 
+  // Blog annotations — purple dots at bottom of chart, clickable
+  const blogSet = new Set((RAW[currentTankKey].blog || []).map(e => e.date));
+  allDates.forEach((d, i) => {
+    if (blogSet.has(d)) {
+      annotations[`blog_${i}`] = {
+        type: 'point',
+        xScaleID: 'x', yScaleID: 'yBlog',
+        xValue: d, yValue: 9,
+        radius: 5, hitRadius: 0,
+        pointStyle: 'triangle',
+        rotation: 180,
+        z: 10,
+        backgroundColor: 'rgba(167,139,250,0.75)',
+        borderColor: 'rgba(167,139,250,0.9)',
+        borderWidth: 1,
+      };
+    }
+  });
+
   // Scales
   const scales = {
     x: {
@@ -744,6 +816,7 @@ function makeChart(id, data, valueKey, color, tMin, tMax, canShowDose, masterLab
       grid: {color:'rgba(255,255,255,0.03)'},
       ticks: {font:{family:'Space Mono',size:8}},
       position: 'left',
+      grace: '25%',
     },
   };
   if (doseActive) {
@@ -760,13 +833,51 @@ function makeChart(id, data, valueKey, color, tMin, tMax, canShowDose, masterLab
       }
     };
   }
+  // Hidden scale for blog dot y-position (fixed at bottom)
+  scales.yBlog = { display: false, min: 0, max: 10, offset: false };
 
   charts[id] = new Chart(ctx, {
     type:'line',
     data:{ labels: allDates, datasets },
     options:{
       responsive:true, maintainAspectRatio:true,
+      clip: false,
       interaction:{mode:'index',intersect:false},
+      onClick(event, elements, chart) {
+        const anns = chart.options.plugins.annotation.annotations;
+        const xScale = chart.scales.x, yScale = chart.scales.yBlog;
+        if (!yScale) return;
+        for (const [key, ann] of Object.entries(anns)) {
+          if (!key.startsWith('blog_')) continue;
+          const px = xScale.getPixelForValue(ann.xValue);
+          const py = yScale.getPixelForValue(ann.yValue);
+          const dist = Math.sqrt((event.x - px) ** 2 + (event.y - py) ** 2);
+          if (dist <= 8) { openBlog(ann.xValue); return; }
+        }
+      },
+      onHover(event, elements, chart) {
+        const anns = chart.options.plugins.annotation.annotations;
+        const xScale = chart.scales.x, yScale = chart.scales.yBlog;
+        if (!yScale) return;
+        let nearDot = false;
+        for (const [key, ann] of Object.entries(anns)) {
+          if (!key.startsWith('blog_')) continue;
+          const px = xScale.getPixelForValue(ann.xValue);
+          const py = yScale.getPixelForValue(ann.yValue);
+          const dist = Math.sqrt((event.x - px) ** 2 + (event.y - py) ** 2);
+          const isNear = dist <= 8;
+          const wasLarge = ann.radius === 7;
+          if (isNear && !wasLarge) {
+            ann.radius = 7; ann.backgroundColor = 'rgba(167,139,250,1)';
+            chart.update('none');
+          } else if (!isNear && wasLarge) {
+            ann.radius = 5; ann.backgroundColor = 'rgba(167,139,250,0.75)';
+            chart.update('none');
+          }
+          if (isNear) nearDot = true;
+        }
+        chart.canvas.style.cursor = nearDot ? 'pointer' : '';
+      },
       plugins:{
         legend:{display: doseActive, labels:{
           color:'#5a8aaa', font:{family:'Space Mono',size:8},
@@ -804,6 +915,9 @@ function buildMasterLabels(tankKey) {
   if (showDose) {
     (DOSE_DATA[tankKey] || []).forEach(d => dates.push(d.date));
   }
+
+  // Always include blog entry dates
+  (RAW[tankKey].blog || []).forEach(e => dates.push(e.date));
 
   // Filter to current date window and deduplicate
   return [...new Set(
@@ -1304,6 +1418,143 @@ function deleteLogWC() {
   );
 }
 
+// ── BLOG
+let _blogFlatpickr = null;
+
+function openBlog(editDate) {
+  const td = RAW[currentTankKey];
+  document.getElementById('blogTankLabel').textContent = TANK_NAMES[currentTankKey] || currentTankKey;
+  document.getElementById('blogMsg').textContent = '';
+
+  const existingDates = (td.blog || []).map(e => e.date);
+  const today = new Date().toISOString().split('T')[0];
+  const targetDate = editDate || today;
+
+  document.getElementById('blogModalTitle').textContent = editDate ? 'Edit Entry' : 'New Entry';
+  document.getElementById('blogModal').classList.add('open');
+
+  if (_blogFlatpickr) { _blogFlatpickr.destroy(); _blogFlatpickr = null; }
+
+  _blogFlatpickr = flatpickr('#blogDate', {
+    defaultDate: targetDate,
+    maxDate: today,
+    dateFormat: 'Y-m-d',
+    onDayCreate(dObj, dStr, fp, dayElem) {
+      const d = dayElem.dateObj;
+      const iso = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      if (existingDates.includes(iso)) {
+        dayElem.style.position = 'relative';
+        const dot = document.createElement('span');
+        dot.style.cssText = 'position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:#a78bfa;';
+        dayElem.appendChild(dot);
+      }
+    },
+    onChange(selectedDates, dateStr) {
+      loadBlogEntry(dateStr);
+    }
+  });
+
+  loadBlogEntry(targetDate);
+}
+
+function loadBlogEntry(date) {
+  const td = RAW[currentTankKey];
+  const entry = (td.blog || []).find(e => e.date === date);
+  document.getElementById('blogText').value = entry ? entry.text : '';
+  document.getElementById('blogDeleteBtn').style.display = entry ? '' : 'none';
+  document.getElementById('blogMsg').textContent = entry ? '✎ Existing entry loaded — edit and save to update.' : '';
+  document.getElementById('blogMsg').style.color = '#a78bfa';
+}
+
+function closeBlog() {
+  document.getElementById('blogModal').classList.remove('open');
+  if (_blogFlatpickr) { _blogFlatpickr.destroy(); _blogFlatpickr = null; }
+}
+
+function submitBlog() {
+  const date = document.getElementById('blogDate').value;
+  const text = document.getElementById('blogText').value.trim();
+  if (!date) {
+    document.getElementById('blogMsg').style.color = '#e74c3c';
+    document.getElementById('blogMsg').textContent = 'Please select a date.';
+    return;
+  }
+  if (!text) {
+    document.getElementById('blogMsg').style.color = '#e74c3c';
+    document.getElementById('blogMsg').textContent = 'Please enter some text.';
+    return;
+  }
+
+  const td = RAW[currentTankKey];
+  if (!td.blog) td.blog = [];
+  const idx = td.blog.findIndex(e => e.date === date);
+  if (idx !== -1) {
+    td.blog[idx].text = text;
+  } else {
+    td.blog.push({date, text});
+    td.blog.sort((a,b) => a.date.localeCompare(b.date));
+  }
+
+  initialized[currentTankKey] = false;
+  buildTankPanel(currentTankKey, currentTankKey);
+  initialized[currentTankKey] = true;
+
+  const jsContent = 'const RAW = ' + JSON.stringify(RAW, null, 2) + ';\n';
+  saveData(jsContent,
+    () => closeBlog(),
+    (errMsg) => {
+      document.getElementById('blogMsg').style.color = '#e74c3c';
+      document.getElementById('blogMsg').textContent = '✗ Server error: ' + errMsg;
+    },
+    (jsContent) => {
+      document.getElementById('blogMsg').style.color = '#f39c12';
+      document.getElementById('blogMsg').textContent = `✓ Entry saved. No server detected — download to persist:`;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([jsContent], {type:'application/javascript'}));
+      a.download = 'tank_data.js';
+      a.style.cssText = 'display:inline-block;margin-top:10px;font-family:Space Mono,monospace;font-size:10px;padding:7px 14px;background:rgba(167,139,250,0.12);border:1px solid #a78bfa;color:#a78bfa;border-radius:6px;text-decoration:none;cursor:pointer;';
+      a.textContent = '⬇ Download updated tank_data.js';
+      const msg = document.getElementById('blogMsg');
+      msg.appendChild(document.createElement('br'));
+      msg.appendChild(a);
+    }
+  );
+}
+
+function deleteBlogEntry() {
+  const date = document.getElementById('blogDate').value;
+  if (!date) return;
+  const td = RAW[currentTankKey];
+  const idx = (td.blog || []).findIndex(e => e.date === date);
+  if (idx === -1) return;
+  td.blog.splice(idx, 1);
+
+  initialized[currentTankKey] = false;
+  buildTankPanel(currentTankKey, currentTankKey);
+  initialized[currentTankKey] = true;
+
+  const jsContent = 'const RAW = ' + JSON.stringify(RAW, null, 2) + ';\n';
+  saveData(jsContent,
+    () => closeBlog(),
+    (errMsg) => {
+      document.getElementById('blogMsg').style.color = '#e74c3c';
+      document.getElementById('blogMsg').textContent = '✗ Server error: ' + errMsg;
+    },
+    (jsContent) => {
+      document.getElementById('blogMsg').style.color = '#f39c12';
+      document.getElementById('blogMsg').textContent = `✓ Entry deleted. No server detected — download to persist:`;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([jsContent], {type:'application/javascript'}));
+      a.download = 'tank_data.js';
+      a.style.cssText = 'display:inline-block;margin-top:10px;font-family:Space Mono,monospace;font-size:10px;padding:7px 14px;background:rgba(231,76,60,0.12);border:1px solid #e74c3c;color:#e74c3c;border-radius:6px;text-decoration:none;cursor:pointer;';
+      a.textContent = '⬇ Download updated tank_data.js';
+      const msg = document.getElementById('blogMsg');
+      msg.appendChild(document.createElement('br'));
+      msg.appendChild(a);
+    }
+  );
+}
+
 // ── SHARED SAVE HELPER
 // onSuccess: called when server confirms write
 // onServerError: called when server responded but reported an error
@@ -1419,17 +1670,40 @@ function buildTankPanel(panelId, tankKey) {
   // Charts — anchor div receives the dateBar element via JS after render
   let chartHtml = '<div id="controls-anchor-'+panelId+'"></div>'
     + '<div class="slabel">Parameter Trends</div><div class="chart-grid">';
+  const hasBlogInWindow = (td.blog || []).some(e =>
+    (!dateFrom || e.date >= dateFrom) && (!dateTo || e.date <= dateTo)
+  );
+  const blogLegend = hasBlogInWindow
+    ? `<span class="target-legend" style="color:rgba(167,139,250,0.9)">▼&nbsp;Blog&nbsp;Entry</span>`
+    : '';
   CHART_DEFS.forEach(cd=>{
     const dataKey = DATA_KEY_MAP[cd.key];
     const targetLabel = cd.tMin !== undefined
       ? `<span class="target-legend"><span class="target-swatch"></span>Target&nbsp;${cd.tMin}–${cd.tMax}</span>`
       : '';
     chartHtml += `<div class="ccard">
-      <div class="ccard-title">${cd.label}${targetLabel}</div>
+      <div class="ccard-title">${cd.label}<span style="display:inline-flex;gap:8px;align-items:center">${targetLabel}${blogLegend}</span></div>
       <canvas id="chart-${panelId}-${dataKey}" height="160"></canvas>
     </div>`;
   });
   chartHtml += '</div>';
+
+  // Blog section
+  const blogEntries = (td.blog || []).slice().sort((a,b) => b.date.localeCompare(a.date));
+  let blogHtml = `<div class="slabel">Daily Log <button onclick="openBlog()" style="font-family:'Space Mono',monospace;font-size:11px;padding:4px 10px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.35);color:#a78bfa;border-radius:4px;cursor:pointer;letter-spacing:0.5px;text-transform:none;">+ Add Entry</button></div>`
+    + '<div class="tcard">';
+  if (blogEntries.length === 0) {
+    blogHtml += '<div class="blog-empty">No entries yet.</div>';
+  } else {
+    blogEntries.forEach(e => {
+      blogHtml += `<div class="blog-entry">
+        <div class="blog-date">${e.date}</div>
+        <div class="blog-text">${e.text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+        <button class="blog-edit-btn" onclick="openBlog('${e.date}')">✎ Edit</button>
+      </div>`;
+    });
+  }
+  blogHtml += '</div>';
 
   // Rescue dateBar before innerHTML wipe (it may currently be a child of this panel)
   const dateBarEl = document.getElementById('dateBar');
@@ -1437,7 +1711,7 @@ function buildTankPanel(panelId, tankKey) {
   if (dateBarEl && dateBarStash) dateBarStash.appendChild(dateBarEl);
 
   // Clear and repopulate the panel
-  panel.innerHTML = kpiHtml + chartHtml;
+  panel.innerHTML = kpiHtml + chartHtml + blogHtml;
 
   // Move the dateBar element into the anchor slot between KPIs and charts
   const anchor = document.getElementById('controls-anchor-' + panelId);

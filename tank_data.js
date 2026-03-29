@@ -3680,139 +3680,139 @@ const RAW = {
     "nitrate": [
       {
         "date": "2021-01-11",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-12",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-13",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-14",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-15",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-16",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-17",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-18",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-19",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-20",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-21",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-22",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-23",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-24",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-25",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-26",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-27",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-28",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-29",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-30",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-01-31",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-02-01",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-02-02",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-02-03",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-02-04",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-02-05",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-02-06",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-02-07",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-02-08",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-02-09",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-02-10",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-02-11",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-02-12",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-02-13",
-        "Nitrate": 3.0
+        "Nitrate": 3
       },
       {
         "date": "2021-02-14",
@@ -3824,7 +3824,7 @@ const RAW = {
       },
       {
         "date": "2021-02-16",
-        "Nitrate": 1.0
+        "Nitrate": 1
       },
       {
         "date": "2021-02-17",
@@ -3840,63 +3840,63 @@ const RAW = {
       },
       {
         "date": "2021-02-20",
-        "Nitrate": 1.0
+        "Nitrate": 1
       },
       {
         "date": "2021-02-21",
-        "Nitrate": 1.0
+        "Nitrate": 1
       },
       {
         "date": "2021-02-22",
-        "Nitrate": 4.0
+        "Nitrate": 4
       },
       {
         "date": "2021-02-23",
-        "Nitrate": 4.0
+        "Nitrate": 4
       },
       {
         "date": "2021-02-24",
-        "Nitrate": 3.0
+        "Nitrate": 3
       },
       {
         "date": "2021-02-25",
-        "Nitrate": 4.0
+        "Nitrate": 4
       },
       {
         "date": "2021-02-26",
-        "Nitrate": 4.0
+        "Nitrate": 4
       },
       {
         "date": "2021-02-27",
-        "Nitrate": 4.0
+        "Nitrate": 4
       },
       {
         "date": "2021-02-28",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-03-01",
-        "Nitrate": 4.0
+        "Nitrate": 4
       },
       {
         "date": "2021-03-03",
-        "Nitrate": 4.0
+        "Nitrate": 4
       },
       {
         "date": "2021-03-04",
-        "Nitrate": 64.0
+        "Nitrate": 64
       },
       {
         "date": "2021-03-05",
-        "Nitrate": 4.0
+        "Nitrate": 4
       },
       {
         "date": "2021-03-07",
-        "Nitrate": 5.0
+        "Nitrate": 5
       },
       {
         "date": "2021-03-08",
-        "Nitrate": 5.0
+        "Nitrate": 5
       },
       {
         "date": "2021-03-10",
@@ -3908,463 +3908,463 @@ const RAW = {
       },
       {
         "date": "2021-03-13",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-03-15",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-03-17",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-03-18",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-03-21",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-03-23",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-03-24",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-03-26",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-03-28",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-03-30",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-04-01",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-04-03",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-04-06",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-04-09",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-04-12",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-04-16",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-04-19",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-04-23",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-04-26",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-04-30",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-05-03",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-05-10",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-05-14",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-05-17",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-05-24",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-06-01",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-06-07",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-06-14",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-06-22",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-06-29",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-07-06",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-07-13",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-07-20",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-07-27",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-08-03",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-08-10",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-08-13",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-08-17",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-08-24",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-08-31",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-09-07",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-09-14",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-09-18",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-09-21",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-10-10",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-10-15",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-10-19",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-10-26",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-11-02",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-11-09",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-11-16",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-11-23",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-11-30",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-12-14",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-12-17",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-12-23",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2021-12-27",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-01-01",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-01-04",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-01-12",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-01-14",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-01-16",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-01-19",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-01-24",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-01-31",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-02-08",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-02-15",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-02-23",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-03-01",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-03-04",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-03-15",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-03-22",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-04-12",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-04-19",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-04-26",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-05-03",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-05-11",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-05-17",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-05-24",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-05-31",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-06-07",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-06-15",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-06-21",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-06-28",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-07-05",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-07-21",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-08-03",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-08-16",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-08-26",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-08-30",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-08-31",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-09-06",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-09-13",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-09-20",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-09-27",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-10-04",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-10-11",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-10-18",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-10-25",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-11-01",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-11-08",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-11-15",
-        "Nitrate": 1.0
+        "Nitrate": 1
       },
       {
         "date": "2022-11-22",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2022-11-30",
-        "Nitrate": 1.0
+        "Nitrate": 1
       },
       {
         "date": "2022-12-08",
-        "Nitrate": 1.0
+        "Nitrate": 1
       },
       {
         "date": "2022-12-15",
-        "Nitrate": 1.0
+        "Nitrate": 1
       },
       {
         "date": "2022-12-19",
-        "Nitrate": 1.0
+        "Nitrate": 1
       },
       {
         "date": "2022-12-27",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-01-05",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-01-10",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-01-24",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-02-04",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-02-10",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-02-15",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-02-21",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-02-27",
@@ -4372,23 +4372,23 @@ const RAW = {
       },
       {
         "date": "2023-02-28",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-03-07",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-03-12",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-03-25",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-04-01",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-04-07",
@@ -4396,7 +4396,7 @@ const RAW = {
       },
       {
         "date": "2023-04-12",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-04-14",
@@ -4404,19 +4404,19 @@ const RAW = {
       },
       {
         "date": "2023-05-02",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-05-09",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-05-16",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-05-23",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-05-30",
@@ -4428,7 +4428,7 @@ const RAW = {
       },
       {
         "date": "2023-06-15",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2023-06-20",
@@ -4456,7 +4456,7 @@ const RAW = {
       },
       {
         "date": "2023-08-22",
-        "Nitrate": 20.0
+        "Nitrate": 20
       },
       {
         "date": "2023-08-29",
@@ -4536,7 +4536,7 @@ const RAW = {
       },
       {
         "date": "2023-11-03",
-        "Nitrate": 45.0
+        "Nitrate": 45
       },
       {
         "date": "2023-11-07",
@@ -4576,7 +4576,7 @@ const RAW = {
       },
       {
         "date": "2024-01-16",
-        "Nitrate": 32.0
+        "Nitrate": 32
       },
       {
         "date": "2024-01-30",
@@ -4588,11 +4588,11 @@ const RAW = {
       },
       {
         "date": "2024-02-13",
-        "Nitrate": 28.0
+        "Nitrate": 28
       },
       {
         "date": "2024-03-05",
-        "Nitrate": 26.0
+        "Nitrate": 26
       },
       {
         "date": "2024-03-12",
@@ -4684,11 +4684,11 @@ const RAW = {
       },
       {
         "date": "2024-09-17",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2024-09-24",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2024-10-05",
@@ -4700,7 +4700,7 @@ const RAW = {
       },
       {
         "date": "2024-10-23",
-        "Nitrate": 1.0
+        "Nitrate": 1
       },
       {
         "date": "2024-11-04",
@@ -4724,7 +4724,7 @@ const RAW = {
       },
       {
         "date": "2024-12-24",
-        "Nitrate": 5.0
+        "Nitrate": 5
       },
       {
         "date": "2025-01-07",
@@ -4744,39 +4744,39 @@ const RAW = {
       },
       {
         "date": "2025-02-11",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-02-25",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-03-04",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-03-11",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-03-18",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-03-25",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-04-01",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-04-08",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-04-15",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-04-29",
@@ -4784,39 +4784,39 @@ const RAW = {
       },
       {
         "date": "2025-05-06",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-05-18",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-05-26",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-06-03",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-06-11",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-06-19",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-06-30",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-07-16",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-08-07",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-08-14",
@@ -4828,11 +4828,11 @@ const RAW = {
       },
       {
         "date": "2025-09-09",
-        "Nitrate": 5.0
+        "Nitrate": 5
       },
       {
         "date": "2025-09-23",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-10-13",
@@ -4844,7 +4844,7 @@ const RAW = {
       },
       {
         "date": "2025-11-18",
-        "Nitrate": 0.0
+        "Nitrate": 0
       },
       {
         "date": "2025-11-25",
@@ -8129,7 +8129,7 @@ const RAW = {
       },
       {
         "date": "2026-01-15",
-        "dose": 1.0
+        "dose": 1
       },
       {
         "date": "2026-01-18",
@@ -8145,19 +8145,33 @@ const RAW = {
       },
       {
         "date": "2026-02-10",
-        "dose": 2.0
+        "dose": 2
       },
       {
         "date": "2026-02-17",
-        "dose": 2.0
+        "dose": 2
       },
       {
         "date": "2026-02-24",
-        "dose": 2.0
+        "dose": 2
       },
       {
         "date": "2026-03-13",
-        "dose": 2.0
+        "dose": 2
+      }
+    ],
+    "blog": [
+      {
+        "date": "2026-03-10",
+        "text": "test 2"
+      },
+      {
+        "date": "2026-03-18",
+        "text": "test 5"
+      },
+      {
+        "date": "2026-03-29",
+        "text": "test"
       }
     ]
   },
@@ -12264,7 +12278,7 @@ const RAW = {
       },
       {
         "date": "2025-12-29",
-        "dose": 8.0
+        "dose": 8
       },
       {
         "date": "2026-01-04",
@@ -12284,7 +12298,7 @@ const RAW = {
       },
       {
         "date": "2026-01-15",
-        "dose": 1.0
+        "dose": 1
       },
       {
         "date": "2026-01-18",
@@ -12308,13 +12322,14 @@ const RAW = {
       },
       {
         "date": "2026-02-24",
-        "dose": 1.0
+        "dose": 1
       },
       {
         "date": "2026-03-13",
-        "dose": 1.0
+        "dose": 1
       }
-    ]
+    ],
+    "blog": []
   },
   "laurens": {
     "latest": {
@@ -14219,57 +14234,58 @@ const RAW = {
       },
       {
         "date": "2025-12-29",
-        "dose": 0.0
+        "dose": 0
       },
       {
         "date": "2026-01-04",
-        "dose": 0.0
+        "dose": 0
       },
       {
         "date": "2026-01-06",
-        "dose": 0.0
+        "dose": 0
       },
       {
         "date": "2026-01-08",
-        "dose": 0.0
+        "dose": 0
       },
       {
         "date": "2026-01-11",
-        "dose": 0.0
+        "dose": 0
       },
       {
         "date": "2026-01-15",
-        "dose": 0.0
+        "dose": 0
       },
       {
         "date": "2026-01-18",
-        "dose": 1.0
+        "dose": 1
       },
       {
         "date": "2026-01-25",
-        "dose": 1.0
+        "dose": 1
       },
       {
         "date": "2026-02-03",
-        "dose": 1.0
+        "dose": 1
       },
       {
         "date": "2026-02-10",
-        "dose": 1.0
+        "dose": 1
       },
       {
         "date": "2026-02-17",
-        "dose": 1.0
+        "dose": 1
       },
       {
         "date": "2026-02-24",
-        "dose": 2.0
+        "dose": 2
       },
       {
         "date": "2026-03-13",
         "dose": 2.4
       }
-    ]
+    ],
+    "blog": []
   },
   "equipment": [
     {
