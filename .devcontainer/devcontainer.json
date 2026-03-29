@@ -11,5 +11,5 @@
       "onAutoForward": "openBrowser"
     }
   },
-  "postStartCommand": "apache2-foreground &"
+  "postStartCommand": "service apache2 start"
 }
