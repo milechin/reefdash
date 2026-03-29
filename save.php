@@ -48,14 +48,6 @@ try {
         throw new Exception('Directory not writable: ' . $dir);
     }
 
-    // Back up existing file
-    if (file_exists($filePath)) {
-        $backup = $dir . '/tank_data.backup-' . time() . '.js';
-        if (!copy($filePath, $backup)) {
-            throw new Exception('Could not create backup file');
-        }
-    }
-
     // Write new file
     $bytes = file_put_contents($filePath, $content);
     if ($bytes === false) {
