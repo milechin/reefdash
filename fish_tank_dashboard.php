@@ -396,9 +396,6 @@ tr:last-child td { border:none; }
     <button class="tab-btn" onclick="switchTab('equipment',this)">
       <span class="dot"></span>Equipment
     </button>
-    <button class="tab-btn" onclick="switchTab('log',this)">
-      <span class="dot"></span>Log
-    </button>
     <button class="tab-btn" onclick="switchTab('help',this)" style="margin-left:auto;">
       <span class="dot"></span>Help
     </button>
@@ -530,13 +527,6 @@ tr:last-child td { border:none; }
     </div>
   </div>
 
-  <!-- LOG PANEL -->
-  <div class="panel" id="panel-log">
-    <div class="slabel">Activity Log</div>
-    <div class="tcard">
-      <div id="logBody"></div>
-    </div>
-  </div>
 
   <!-- HELP PANEL -->
   <div class="panel" id="panel-help">
@@ -1747,16 +1737,6 @@ RAW.equipment.forEach(e=>{
     <td style="font-family:'Space Mono',monospace;font-size:10px;color:#5a8aaa">${e.expired||'—'}</td>
     <td><span class="chip ${cls}">${txt}</span></td>
   </tr>`;
-});
-
-// ── LOG
-const logBody = document.getElementById('logBody');
-RAW.log.forEach(e=>{
-  logBody.innerHTML+=`<div class="log-entry">
-    <div class="log-date">${e.date}</div>
-    <div class="log-text">${e.comment}</div>
-    <div class="log-init">${e.initials}</div>
-  </div>`;
 });
 
 // ── TAB SWITCHING
