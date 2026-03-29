@@ -11,5 +11,5 @@
       "onAutoForward": "openBrowser"
     }
   },
-  "postStartCommand": "chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html && service apache2 start"
+  "postStartCommand": "sed -i 's|/var/www/html|/workspaces/reefdash|g' /etc/apache2/sites-available/000-default.conf /etc/apache2/apache2.conf && chmod -R 755 /workspaces/reefdash && service apache2 start"
 }
