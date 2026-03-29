@@ -4,7 +4,7 @@ I have a reef tank monitoring dashboard project. Here's the full context:
 A single-page reef tank water quality dashboard served from a Synology NAS via Apache/Web Station with PHP enabled. The dashboard tracks three tanks: Display Tank, QRT, and Lauren's.
 
 ## Files
-- `fish_tank_dashboard.php` — main dashboard (PHP file so the <head> can inject a cache-busted `<script src="tank_data.js?v={filemtime}>` tag)
+- `index.php` — main dashboard (PHP file so the <head> can inject a cache-busted `<script src="tank_data.js?v={filemtime}>` tag)
 - `tank_data.js` — all tank data as `const RAW = {...};`
 - `save.php` — PHP endpoint that receives POSTed JSON, validates, and writes new tank_data.js to disk
 - `save_targets.php` — PHP endpoint that writes targets.json to disk
@@ -123,8 +123,6 @@ save_targets.php and save_equipment.php accept a raw JSON array/object POST body
 - Value key in RAW arrays is `Nitrate` (capital N), not `Value`
 
 ## Deployment
-- Synology NAS, Web Station with PHP enabled
-- URL: http://192.168.50.29/~dennis/fish_tank_dashboard.php
 - All files in the same web directory
 - No Node.js, no npm, no build step
 - Local dev: `docker build -t reefdash . && docker run -p 8080:80 reefdash`
