@@ -14,11 +14,14 @@ $targetsFile = __DIR__ . '/targets.json';
 $savedTargets = file_exists($targetsFile) ? (json_decode(file_get_contents($targetsFile), true) ?: []) : [];
 $tanksFile = __DIR__ . '/tanks.json';
 $tanks = file_exists($tanksFile) ? (json_decode(file_get_contents($tanksFile), true) ?: []) : [];
+$equipFile = __DIR__ . '/equipment.json';
+$equipment = file_exists($equipFile) ? (json_decode(file_get_contents($equipFile), true) ?: []) : [];
 ?>
 <script src="tank_data.js?v=<?php echo $v; ?>"></script>
 <script>
 const SAVED_TARGETS = <?php echo json_encode($savedTargets); ?>;
 const TANK_CONFIGS  = <?php echo json_encode($tanks); ?>;
+const EQUIPMENT_RAW = <?php echo json_encode($equipment); ?>;
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
@@ -393,9 +396,6 @@ tr:last-child td { border:none; }
       <span class="dot"></span><?php echo htmlspecialchars($tank['label']); ?>
     </button>
     <?php endforeach; ?>
-    <button class="tab-btn" onclick="switchTab('equipment',this)">
-      <span class="dot"></span>Equipment
-    </button>
     <button class="tab-btn" onclick="switchTab('help',this)" style="margin-left:auto;">
       <span class="dot"></span>Help
     </button>
@@ -512,20 +512,45 @@ tr:last-child td { border:none; }
     </div>
   </div>
 
+  <!-- EQUIPMENT MODAL -->
+  <div class="modal-overlay" id="equipModal" onclick="if(event.target===this)closeEquip()">
+    <div class="modal" style="max-width:460px">
+      <div class="modal-header">
+        <h2>🔧 <span id="equipModalTitle">Equipment</span></h2>
+        <button class="modal-close" onclick="closeEquip()">✕</button>
+      </div>
+      <div style="padding:4px 0 12px; font-family:'Space Mono',monospace; font-size:11px; color:var(--dim);">
+        Tank: <span id="equipTankLabel" style="color:var(--biolume)"></span>
+      </div>
+      <div class="target-row-edit" style="margin-bottom:10px;">
+        <label style="color:var(--text);font-weight:600;">Item</label>
+        <input type="text" class="target-num-input" id="equipItem" placeholder="e.g. Cobalt Heater" style="flex:1;max-width:none;">
+      </div>
+      <div class="target-row-edit" style="margin-bottom:10px;">
+        <label style="color:var(--text);font-weight:600;">Purchased</label>
+        <input type="date" class="target-num-input" id="equipPurchased" style="flex:1;max-width:none;">
+      </div>
+      <div class="target-row-edit" style="margin-bottom:10px;">
+        <label style="color:var(--text);font-weight:600;">Expires</label>
+        <input type="date" class="target-num-input" id="equipExpires" style="flex:1;max-width:none;">
+      </div>
+      <div class="target-row-edit" style="margin-bottom:10px;">
+        <label style="color:var(--text);font-weight:600;">Comment</label>
+        <input type="text" class="target-num-input" id="equipComment" placeholder="e.g. Replaced" style="flex:1;max-width:none;">
+      </div>
+      <div id="equipMsg" style="font-family:'Space Mono',monospace;font-size:11px;min-height:18px;margin-top:8px;"></div>
+      <div class="modal-footer">
+        <button class="btn-reset" onclick="closeEquip()">Cancel</button>
+        <button id="equipDeleteBtn" class="btn-reset" style="display:none;border-color:rgba(231,76,60,0.4);color:#e74c3c;" onclick="deleteEquip()">🗑 Delete</button>
+        <button class="btn-apply" onclick="submitEquip()">Save</button>
+      </div>
+    </div>
+  </div>
+
   <?php foreach ($tanks as $i => $tank): ?>
   <div class="panel<?php echo $i === 0 ? ' active' : ''; ?>" id="panel-<?php echo htmlspecialchars($tank['key']); ?>"></div>
   <?php endforeach; ?>
 
-  <!-- EQUIPMENT PANEL -->
-  <div class="panel" id="panel-equipment">
-    <div class="slabel">Equipment Warranties</div>
-    <div class="tcard">
-      <table>
-        <thead><tr><th>TANK</th><th>ITEM</th><th>EXPIRES</th><th>STATUS</th></tr></thead>
-        <tbody id="equipBody"></tbody>
-      </table>
-    </div>
-  </div>
 
 
   <!-- HELP PANEL -->
@@ -541,7 +566,7 @@ tr:last-child td { border:none; }
       <div class="help-card">
         <div class="help-card-icon">🗂️</div>
         <h3>Tank Tabs</h3>
-        <p>Switch between tank tabs to view each tank's water chemistry independently. The <strong>Equipment</strong> tab shows warranty expiry for all hardware. The <strong>Log</strong> tab shows recent activity entries. Switching tabs resets the date range to the last 90 days for that tank.</p>
+        <p>Switch between tank tabs to view each tank's water chemistry independently. Switching tabs resets the date range to the last 90 days for that tank.</p>
       </div>
 
       <div class="help-card">
@@ -600,8 +625,8 @@ tr:last-child td { border:none; }
 
       <div class="help-card">
         <div class="help-card-icon">🔧</div>
-        <h3>Equipment Tab</h3>
-        <p>Shows all equipment across every tank with install dates and warranty expiry. Items expiring within <strong>180 days</strong> are flagged in amber, <strong>expired</strong> items appear in red, and items with plenty of warranty left are shown in green. Items marked <em>Replaced</em> are shown in grey. Items without a warranty end date show "No expiry".</p>
+        <h3>Equipment</h3>
+        <p>Each tank panel has an <strong>Equipment</strong> section showing items with their expiry dates and warranty status. Items expiring within <strong>180 days</strong> are flagged in amber, <strong>expired</strong> items appear in red, and active items are shown in green. Use <strong>+ Add</strong> to add a new item or <strong>✎ Edit</strong> to update or delete an existing one. Changes are saved to <strong>equipment.json</strong> immediately.</p>
       </div>
 
     </div>
@@ -1696,13 +1721,26 @@ function buildTankPanel(panelId, tankKey) {
   }
   blogHtml += '</div>';
 
+  // Equipment section
+  const tankEquip = EQUIPMENT_RAW.filter(e => e.tank === tankKey);
+  let equipHtml = `<div class="slabel">Equipment <button onclick="openEquip()" style="font-family:'Space Mono',monospace;font-size:11px;padding:4px 10px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.35);color:var(--biolume);border-radius:4px;cursor:pointer;letter-spacing:0.5px;text-transform:none;">+ Add</button></div>`;
+  if (tankEquip.length > 0) {
+    equipHtml += '<div class="tcard"><table>'
+      + '<thead><tr><th>ITEM</th><th>EXPIRES</th><th>STATUS</th><th></th></tr></thead><tbody>';
+    tankEquip.forEach((e, i) => {
+      const idx = EQUIPMENT_RAW.indexOf(e);
+      equipHtml += equipRowHtml(e, false, idx);
+    });
+    equipHtml += '</tbody></table></div>';
+  }
+
   // Rescue dateBar before innerHTML wipe (it may currently be a child of this panel)
   const dateBarEl = document.getElementById('dateBar');
   const dateBarStash = document.getElementById('dateBarStash');
   if (dateBarEl && dateBarStash) dateBarStash.appendChild(dateBarEl);
 
   // Clear and repopulate the panel
-  panel.innerHTML = kpiHtml + chartHtml + blogHtml;
+  panel.innerHTML = kpiHtml + chartHtml + blogHtml + equipHtml;
 
   // Move the dateBar element into the anchor slot between KPIs and charts
   const anchor = document.getElementById('controls-anchor-' + panelId);
@@ -1722,23 +1760,121 @@ function buildTankPanel(panelId, tankKey) {
   });
 }
 
-// ── EQUIPMENT
-const equipBody = document.getElementById('equipBody');
-RAW.equipment.forEach(e=>{
-  const d = e.days;
+// ── EQUIPMENT HELPERS
+function equipDaysLeft(expires) {
+  if (!expires) return null;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const exp = new Date(expires);
+  return Math.round((exp - now) / 86400000);
+}
+
+function equipRowHtml(e, showTank, idx) {
+  const d = equipDaysLeft(e.expires);
   let cls='gray', txt='No expiry';
-  if (e.comment==='Replaced') { cls='gray'; txt='Replaced'; }
-  else if (d===null) { cls='gray'; txt='No expiry'; }
-  else if (d<0) { cls='bad';  txt='Expired'; }
-  else if (d<180) { cls='warn'; txt=`${d}d left`; }
-  else { cls='good'; txt=`${d}d left`; }
-  equipBody.innerHTML+=`<tr>
-    <td><span class="tbadge">${e.tank}</span></td>
+  if (e.comment==='Replaced')  { cls='gray'; txt='Replaced'; }
+  else if (d===null)            { cls='gray'; txt='No expiry'; }
+  else if (d<0)                 { cls='bad';  txt='Expired'; }
+  else if (d<180)               { cls='warn'; txt=`${d}d left`; }
+  else                          { cls='good'; txt=`${d}d left`; }
+  const tankCell = showTank ? `<td><span class="tbadge">${TANK_NAMES[e.tank]||e.tank}</span></td>` : '';
+  const editCell = idx !== undefined
+    ? `<td><button class="blog-edit-btn" onclick="openEquip(${idx})">✎ Edit</button></td>`
+    : '<td></td>';
+  return `<tr>
+    ${tankCell}
     <td style="font-size:11px">${e.item}</td>
-    <td style="font-family:'Space Mono',monospace;font-size:10px;color:#5a8aaa">${e.expired||'—'}</td>
+    <td style="font-family:'Space Mono',monospace;font-size:10px;color:#5a8aaa">${e.expires||'—'}</td>
     <td><span class="chip ${cls}">${txt}</span></td>
+    ${editCell}
   </tr>`;
-});
+}
+
+// ── EQUIPMENT MODAL
+let _equipEditIdx = null;
+
+function openEquip(idx) {
+  _equipEditIdx = idx !== undefined ? idx : null;
+  const isEdit = _equipEditIdx !== null;
+  document.getElementById('equipModalTitle').textContent = isEdit ? 'Edit Equipment' : 'Add Equipment';
+  document.getElementById('equipTankLabel').textContent = TANK_NAMES[currentTankKey] || currentTankKey;
+  document.getElementById('equipMsg').textContent = '';
+  document.getElementById('equipDeleteBtn').style.display = isEdit ? '' : 'none';
+
+  if (isEdit) {
+    const e = EQUIPMENT_RAW[_equipEditIdx];
+    document.getElementById('equipItem').value      = e.item      || '';
+    document.getElementById('equipPurchased').value = e.purchased || '';
+    document.getElementById('equipExpires').value   = e.expires   || '';
+    document.getElementById('equipComment').value   = e.comment   || '';
+  } else {
+    document.getElementById('equipItem').value      = '';
+    document.getElementById('equipPurchased').value = '';
+    document.getElementById('equipExpires').value   = '';
+    document.getElementById('equipComment').value   = '';
+  }
+  document.getElementById('equipModal').classList.add('open');
+}
+
+function closeEquip() {
+  document.getElementById('equipModal').classList.remove('open');
+}
+
+function saveEquipAndRebuild(onSuccess) {
+  fetch('save_equipment.php', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(EQUIPMENT_RAW)
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.ok) {
+      onSuccess();
+    } else {
+      document.getElementById('equipMsg').style.color = '#e74c3c';
+      document.getElementById('equipMsg').textContent = '✗ Server error: ' + res.error;
+    }
+  })
+  .catch(() => {
+    document.getElementById('equipMsg').style.color = '#f39c12';
+    document.getElementById('equipMsg').textContent = '✗ Could not reach server.';
+  });
+}
+
+function rebuildEquipViews() {
+  initialized[currentTankKey] = false;
+  buildTankPanel(currentTankKey, currentTankKey);
+  initialized[currentTankKey] = true;
+}
+
+function submitEquip() {
+  const item = document.getElementById('equipItem').value.trim();
+  if (!item) {
+    document.getElementById('equipMsg').style.color = '#e74c3c';
+    document.getElementById('equipMsg').textContent = 'Item name is required.';
+    return;
+  }
+  const entry = {
+    tank:      currentTankKey,
+    item,
+    purchased: document.getElementById('equipPurchased').value || null,
+    expires:   document.getElementById('equipExpires').value   || null,
+    comment:   document.getElementById('equipComment').value.trim(),
+  };
+
+  if (_equipEditIdx !== null) {
+    EQUIPMENT_RAW[_equipEditIdx] = entry;
+  } else {
+    EQUIPMENT_RAW.push(entry);
+  }
+
+  saveEquipAndRebuild(() => { rebuildEquipViews(); closeEquip(); });
+}
+
+function deleteEquip() {
+  if (_equipEditIdx === null) return;
+  EQUIPMENT_RAW.splice(_equipEditIdx, 1);
+  saveEquipAndRebuild(() => { rebuildEquipViews(); closeEquip(); });
+}
 
 // ── TAB SWITCHING
 const initialized = Object.fromEntries(TANK_CONFIGS.map(t => [t.key, false]));
