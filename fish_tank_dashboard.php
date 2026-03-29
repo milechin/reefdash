@@ -653,12 +653,13 @@ let dateFrom = null; // null = no filter
 let dateTo   = null;
 
 function getDateRange() {
-  // Compute global min/max across ALL data for current tank
+  // Compute global min/max across ALL data for current tank, including blog entries
   const td = RAW[currentTankKey];
   let allDates = [];
   ['temp','ph','salinity','alk','calcium','phosphate','nitrate','ammonia'].forEach(k=>{
     (td[k]||[]).forEach(d=>allDates.push(d.date));
   });
+  (td.blog || []).forEach(e => allDates.push(e.date));
   allDates.sort();
   return { min: allDates[0], max: allDates[allDates.length-1] };
 }
