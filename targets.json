@@ -1,0 +1,30 @@
+{
+    "Temp": {
+        "tMin": 76,
+        "tMax": 80
+    },
+    "pH": {
+        "tMin": 8.1,
+        "tMax": 8.5
+    },
+    "Salinity": {
+        "tMin": 1.025,
+        "tMax": 1.027
+    },
+    "ALK": {
+        "tMin": 11,
+        "tMax": 12
+    },
+    "Calcium": {
+        "tMin": 435,
+        "tMax": 465
+    },
+    "Phosphate": {
+        "tMin": 0,
+        "tMax": 0.03
+    },
+    "Nitrate": {
+        "tMin": 4,
+        "tMax": 12
+    }
+}

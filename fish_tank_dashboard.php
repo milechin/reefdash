@@ -8,8 +8,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<?php $v = file_exists('tank_data.js') ? filemtime('tank_data.js') : time(); ?>
+<?php
+$v = file_exists('tank_data.js') ? filemtime('tank_data.js') : time();
+$targetsFile = __DIR__ . '/targets.json';
+$savedTargets = file_exists($targetsFile) ? (json_decode(file_get_contents($targetsFile), true) ?: []) : [];
+?>
 <script src="tank_data.js?v=<?php echo $v; ?>"></script>
+<script>const SAVED_TARGETS = <?php echo json_encode($savedTargets); ?>;</script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -910,8 +915,17 @@ const CHART_DEFS = [
 
 const DATA_KEY_MAP = {Temp:'temp',pH:'ph',Salinity:'salinity',ALK:'alk',Calcium:'calcium',Phosphate:'phosphate',Nitrate:'nitrate',Ammonia:'ammonia'};
 
-// Store defaults for reset
+// Store defaults for reset (before applying saved targets)
 const CHART_DEFS_DEFAULTS = CHART_DEFS.map(cd => ({...cd}));
+
+// Apply persisted targets from targets.json
+Object.entries(SAVED_TARGETS).forEach(([key, t]) => {
+  const cd = CHART_DEFS.find(c => c.key === key);
+  if (!cd) return;
+  cd.tMin = t.tMin; cd.tMax = t.tMax;
+  const kpi = KPI_DEFS.find(k => DATA_KEY_MAP[cd.key] === k.key);
+  if (kpi) { kpi.min = t.tMin; kpi.max = t.tMax; }
+});
 
 function openTargetEditor() {
   const container = document.getElementById('targetEditorRows');
@@ -958,6 +972,19 @@ function applyTargets() {
   initialized[currentTankKey] = false;
   buildTankPanel(currentTankKey, currentTankKey);
   initialized[currentTankKey] = true;
+  saveTargets();
+}
+
+function saveTargets() {
+  const payload = {};
+  CHART_DEFS.forEach(cd => {
+    if (cd.tMin !== undefined) payload[cd.key] = {tMin: cd.tMin, tMax: cd.tMax};
+  });
+  fetch('save_targets.php', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  }).catch(() => {}); // silent fail — targets are already applied in memory
 }
 
 function resetTargets() {
