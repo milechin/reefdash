@@ -7,7 +7,11 @@
 		"context": "..",
 		// Update the 'dockerFile' property if you aren't using the standard 'Dockerfile' filename.
 		"dockerfile": "../Dockerfile"
-	}
+	},
+	"features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [8080]
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
