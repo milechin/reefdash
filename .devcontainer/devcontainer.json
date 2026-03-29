@@ -11,5 +11,5 @@
       "onAutoForward": "openBrowser"
     }
   },
-  "postStartCommand": "sed -i 's|/var/www/html|/workspaces/reefdash|g' /etc/apache2/sites-available/000-default.conf /etc/apache2/apache2.conf && chmod -R 755 /workspaces/reefdash && service apache2 start"
+  "postStartCommand": "sed -i 's|/var/www/html|/workspaces/reefdash|g' /etc/apache2/sites-available/000-default.conf && echo '<Directory /workspaces/reefdash>\\n  Options Indexes FollowSymLinks\\n  AllowOverride None\\n  Require all granted\\n</Directory>' >> /etc/apache2/apache2.conf && chmod -R 755 /workspaces/reefdash && service apache2 start"
 }
