@@ -19,6 +19,10 @@
         "tMin": 435,
         "tMax": 465
     },
+    "Magnesium": {
+        "tMin": 1250,
+        "tMax": 1350
+    },
     "Phosphate": {
         "tMin": 0,
         "tMax": 0.03

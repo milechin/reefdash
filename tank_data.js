@@ -8,6 +8,7 @@ const RAW = {
       "ammonia": 0.01,
       "alk": 9.1,
       "calcium": 430,
+      "magnesium": null,
       "phosphate": 0.02,
       "lastDate": "2026-03-13"
     },
@@ -6791,6 +6792,7 @@ const RAW = {
         "Calcium": 430
       }
     ],
+    "magnesium": [],
     "phosphate": [
       {
         "date": "2021-03-21",
@@ -8185,6 +8187,7 @@ const RAW = {
       "ammonia": 0,
       "alk": 9.3,
       "calcium": 430,
+      "magnesium": null,
       "phosphate": 0,
       "lastDate": "2026-03-13"
     },
@@ -11552,6 +11555,7 @@ const RAW = {
         "Calcium": 430
       }
     ],
+    "magnesium": [],
     "phosphate": [
       {
         "date": "2021-12-27",
@@ -12341,6 +12345,7 @@ const RAW = {
       "ammonia": null,
       "alk": 11.2,
       "calcium": 440,
+      "magnesium": null,
       "phosphate": 0,
       "lastDate": "2026-03-13"
     },
@@ -13952,6 +13957,7 @@ const RAW = {
         "Calcium": 440
       }
     ],
+    "magnesium": [],
     "phosphate": [
       {
         "date": "2024-08-06",
