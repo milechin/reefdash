@@ -681,7 +681,7 @@ function getDateRange() {
   // Compute global min/max across ALL data for current tank, including blog entries
   const td = RAW[currentTankKey];
   let allDates = [];
-  ['temp','ph','salinity','alk','calcium','phosphate','nitrate','ammonia'].forEach(k=>{
+  ['temp','ph','salinity','alk','calcium','magnesium','phosphate','nitrate','ammonia'].forEach(k=>{
     (td[k]||[]).forEach(d=>allDates.push(d.date));
   });
   (td.blog || []).forEach(e => allDates.push(e.date));
@@ -914,7 +914,7 @@ function makeChart(id, data, valueKey, color, tMin, tMax, canShowDose, masterLab
 
 function buildMasterLabels(tankKey) {
   const td = RAW[tankKey];
-  const metrics = ['temp','ph','salinity','alk','calcium','phosphate','nitrate','ammonia'];
+  const metrics = ['temp','ph','salinity','alk','calcium','magnesium','phosphate','nitrate','ammonia'];
 
   // Collect all measurement dates across every metric for this tank
   let dates = [];
@@ -1028,8 +1028,9 @@ const KPI_DEFS = [
   {key:'ph',      label:'pH',          unit:'',    dec:2, min:8.1,   max:8.5,   color:'#a78bfa', icon:'⚗️'},
   {key:'salinity',label:'Salinity',    unit:'SG',  dec:3, min:1.025, max:1.027, color:'#2ecc71', icon:'🧂'},
   {key:'alk',     label:'Alkalinity',  unit:'dKH', dec:1, min:11,    max:12,    color:'#ffd166', icon:'💧'},
-  {key:'calcium', label:'Calcium',     unit:'ppm', dec:0, min:435,   max:465,   color:'#f39c12', icon:'🦴'},
-  {key:'phosphate',label:'Phosphate',  unit:'ppm', dec:3, min:0,     max:0.03,  color:'#ec4899', icon:'🔬'},
+  {key:'calcium',   label:'Calcium',    unit:'ppm', dec:0, min:435,   max:465,   color:'#f39c12', icon:'🦴'},
+  {key:'magnesium', label:'Magnesium',  unit:'ppm', dec:0, min:1250,  max:1350,  color:'#74b9ff', icon:'🔷'},
+  {key:'phosphate', label:'Phosphate',  unit:'ppm', dec:3, min:0,     max:0.03,  color:'#ec4899', icon:'🔬'},
   {key:'nitrate', label:'Nitrate',     unit:'ppm', dec:2, min:0,     max:0.3,   color:'#06b6d4', icon:'🧪'},
   {key:'ammonia', label:'Ammonia',     unit:'ppm', dec:3, min:0,     max:0.05,  color:'#84cc16', icon:'☢️'},
 ];
@@ -1040,11 +1041,12 @@ const CHART_DEFS = [
   {key:'Salinity',  label:'SALINITY',        color:'#2ecc71', tMin:1.025,tMax:1.027, showDose:false},
   {key:'ALK',       label:'ALKALINITY dKH',  color:'#ffd166', tMin:11,   tMax:12,    showDose:true},
   {key:'Calcium',   label:'CALCIUM ppm',     color:'#f39c12', tMin:435,  tMax:465,   showDose:true},
+  {key:'Magnesium', label:'MAGNESIUM ppm',   color:'#74b9ff', tMin:1250, tMax:1350,  showDose:false},
   {key:'Phosphate', label:'PHOSPHATE ppm',   color:'#ec4899', tMin:0,    tMax:0.03,  showDose:false},
   {key:'Nitrate',   label:'NITRATE ppm',    color:'#06b6d4', tMin:0,    tMax:5,     showDose:false},
 ];
 
-const DATA_KEY_MAP = {Temp:'temp',pH:'ph',Salinity:'salinity',ALK:'alk',Calcium:'calcium',Phosphate:'phosphate',Nitrate:'nitrate',Ammonia:'ammonia'};
+const DATA_KEY_MAP = {Temp:'temp',pH:'ph',Salinity:'salinity',ALK:'alk',Calcium:'calcium',Magnesium:'magnesium',Phosphate:'phosphate',Nitrate:'nitrate',Ammonia:'ammonia'};
 
 // Store defaults for reset (before applying saved targets)
 const CHART_DEFS_DEFAULTS = CHART_DEFS.map(cd => ({...cd}));
@@ -1133,15 +1135,16 @@ const LOG_TEST_FIELDS = [
   {key:'ph',       label:'pH',          unit:'',    step:'0.01',color:'#a78bfa'},
   {key:'salinity', label:'Salinity',    unit:'SG',  step:'0.001',color:'#2ecc71'},
   {key:'alk',      label:'Alkalinity',  unit:'dKH', step:'0.1', color:'#ffd166'},
-  {key:'calcium',  label:'Calcium',     unit:'ppm', step:'1',   color:'#f39c12'},
-  {key:'phosphate',label:'Phosphate',   unit:'ppm', step:'0.001',color:'#ec4899'},
+  {key:'calcium',   label:'Calcium',    unit:'ppm', step:'1',    color:'#f39c12'},
+  {key:'magnesium', label:'Magnesium',  unit:'ppm', step:'1',    color:'#74b9ff'},
+  {key:'phosphate', label:'Phosphate',  unit:'ppm', step:'0.001',color:'#ec4899'},
   {key:'nitrate',  label:'Nitrate',     unit:'ppm',    step:'0.1',  color:'#06b6d4'},
   {key:'ammonia',  label:'Ammonia',     unit:'ppm',    step:'0.01', color:'#84cc16'},
   {key:'dose',     label:'AFR Dose',    unit:'ml/day', step:'0.1',  color:'#fb7185'},
 ];
 
-const DATA_ARRAY_KEY = {temp:'temp',ph:'ph',salinity:'salinity',alk:'alk',calcium:'calcium',phosphate:'phosphate',nitrate:'nitrate',ammonia:'ammonia',dose:'dose'};
-const DATA_VAL_KEY   = {temp:'Temp',ph:'pH',salinity:'Salinity',alk:'ALK',calcium:'Calcium',phosphate:'Phosphate',nitrate:'Nitrate',ammonia:'Ammonia',dose:'dose'};
+const DATA_ARRAY_KEY = {temp:'temp',ph:'ph',salinity:'salinity',alk:'alk',calcium:'calcium',magnesium:'magnesium',phosphate:'phosphate',nitrate:'nitrate',ammonia:'ammonia',dose:'dose'};
+const DATA_VAL_KEY   = {temp:'Temp',ph:'pH',salinity:'Salinity',alk:'ALK',calcium:'Calcium',magnesium:'Magnesium',phosphate:'Phosphate',nitrate:'Nitrate',ammonia:'Ammonia',dose:'dose'};
 
 function loadLogTestValues(date) {
   if (!date) return;
@@ -1643,7 +1646,7 @@ function buildTankPanel(panelId, tankKey) {
   </div>`;
 
   // Days since last water test (most recent date any parameter was recorded)
-  const allMetricDates = ['temp','ph','salinity','alk','calcium','phosphate','nitrate','ammonia']
+  const allMetricDates = ['temp','ph','salinity','alk','calcium','magnesium','phosphate','nitrate','ammonia']
     .flatMap(k => (td[k] || []).map(r => r.date))
     .filter(d => d <= _today)
     .sort();
