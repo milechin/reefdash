@@ -383,7 +383,7 @@ tr:last-child td { border:none; }
   background: #fb7185;
   box-shadow: 0 0 4px #fb7185;
 }
-.flatpickr-day.selected.has-dose::after { background: var(--deep); }
+.flatpickr-day.selected.has-dose::after { background: var(--deep); box-shadow: none; }
 </style>
 </head>
 <body>
@@ -1568,15 +1568,12 @@ function submitLogDose() {
     dateFrom = subtractDays(range.max, presetDays);
     document.getElementById('dateFrom').value = dateFrom;
     document.getElementById('dateTo').value   = dateTo;
-  } else {
-    dateFrom = null; dateTo = null;
-    document.getElementById('dateFrom').value = '';
-    document.getElementById('dateTo').value   = '';
   }
 
   initialized[currentTankKey] = false;
   buildTankPanel(currentTankKey, currentTankKey);
   initialized[currentTankKey] = true;
+  updateDoseToggleVisibility(currentTankKey);
 
   const jsContent = 'const RAW = ' + JSON.stringify(RAW, null, 2) + ';\n';
   saveData(jsContent,
@@ -1612,6 +1609,7 @@ function deleteLogDose() {
   initialized[currentTankKey] = false;
   buildTankPanel(currentTankKey, currentTankKey);
   initialized[currentTankKey] = true;
+  updateDoseToggleVisibility(currentTankKey);
 
   const jsContent = 'const RAW = ' + JSON.stringify(RAW, null, 2) + ';\n';
   saveData(jsContent,
