@@ -371,6 +371,19 @@ tr:last-child td { border:none; }
   background: #60a5fa;
 }
 .flatpickr-day.selected.has-wc::after { background: var(--deep); }
+.flatpickr-day.has-dose::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #fb7185;
+  box-shadow: 0 0 4px #fb7185;
+}
+.flatpickr-day.selected.has-dose::after { background: var(--deep); box-shadow: none; }
 </style>
 </head>
 <body>
@@ -422,6 +435,7 @@ tr:last-child td { border:none; }
       <button class="wc-toggle" id="doseToggle" onclick="toggleDose()" style="border-color:rgba(251,113,133,0.35);color:#fb7185;">
         <span class="wc-dot" style="background:#fb7185;box-shadow:0 0 5px #fb7185"></span>All For Reef Dose
       </button>
+      <button onclick="openLogDose()" style="font-family:'Space Mono',monospace;font-size:11px;padding:4px 10px;background:rgba(251,113,133,0.1);border:1px solid rgba(251,113,133,0.35);color:#fb7185;border-radius:4px;cursor:pointer;letter-spacing:0.5px;">+ Log Dose</button>
       <div style="width:1px;background:var(--border);height:22px;margin:0 2px"></div>
       <button class="gear-btn" onclick="openTargetEditor()" title="Edit target ranges">⚙ Targets</button>
     </div>
@@ -484,6 +498,34 @@ tr:last-child td { border:none; }
         <button class="btn-reset" onclick="closeLogWC()">Cancel</button>
         <button id="logWCDeleteBtn" class="btn-reset" style="display:none;border-color:rgba(231,76,60,0.4);color:#e74c3c;" onclick="deleteLogWC()">🗑 Delete Entry</button>
         <button class="btn-apply" style="background:rgba(59,130,246,0.15);border-color:#60a5fa;color:#93c5fd;" onclick="submitLogWC()">Save Water Change</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG AFR DOSE MODAL -->
+  <div class="modal-overlay" id="logDoseModal" onclick="if(event.target===this)closeLogDose()">
+    <div class="modal" style="max-width:400px">
+      <div class="modal-header">
+        <h2>💉 Log AFR Dose</h2>
+        <button class="modal-close" onclick="closeLogDose()">✕</button>
+      </div>
+      <div style="padding:4px 0 12px; font-family:'Space Mono',monospace; font-size:11px; color:var(--dim);">
+        Tank: <span id="logDoseTankLabel" style="color:#fb7185"></span>
+      </div>
+      <div class="target-row-edit" style="margin-bottom:16px;">
+        <label style="color:var(--text);font-weight:600;">📅 Date</label>
+        <input type="text" class="target-num-input" id="logDoseDate" placeholder="Select a date" readonly style="flex:1;max-width:none;border-color:rgba(251,113,133,0.4);cursor:pointer;">
+      </div>
+      <div class="target-row-edit">
+        <label><span style="background:#fb7185;display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;"></span>AFR Dose (ml/day)</label>
+        <input class="target-num-input" id="logDoseValue" type="number" step="0.1"
+          placeholder="leave blank to skip" style="flex:1;max-width:none;border-color:#fb718544">
+      </div>
+      <div id="logDoseMsg" style="font-family:'Space Mono',monospace;font-size:11px;min-height:18px;margin-top:8px;"></div>
+      <div class="modal-footer">
+        <button class="btn-reset" onclick="closeLogDose()">Cancel</button>
+        <button id="logDoseDeleteBtn" class="btn-reset" style="display:none;border-color:rgba(231,76,60,0.4);color:#e74c3c;" onclick="deleteLogDose()">🗑 Delete Entry</button>
+        <button class="btn-apply" style="background:rgba(251,113,133,0.15);border-color:#fb7185;color:#fda4af;" onclick="submitLogDose()">Save Entry</button>
       </div>
     </div>
   </div>
@@ -685,6 +727,7 @@ function getDateRange() {
     (td[k]||[]).forEach(d=>allDates.push(d.date));
   });
   (td.blog || []).forEach(e => allDates.push(e.date));
+  (td.dose || []).forEach(r => allDates.push(r.date));
   allDates.sort();
   return { min: allDates[0], max: allDates[allDates.length-1] };
 }
@@ -1137,11 +1180,10 @@ const LOG_TEST_FIELDS = [
   {key:'phosphate',label:'Phosphate',   unit:'ppm', step:'0.001',color:'#ec4899'},
   {key:'nitrate',  label:'Nitrate',     unit:'ppm',    step:'0.1',  color:'#06b6d4'},
   {key:'ammonia',  label:'Ammonia',     unit:'ppm',    step:'0.01', color:'#84cc16'},
-  {key:'dose',     label:'AFR Dose',    unit:'ml/day', step:'0.1',  color:'#fb7185'},
 ];
 
-const DATA_ARRAY_KEY = {temp:'temp',ph:'ph',salinity:'salinity',alk:'alk',calcium:'calcium',phosphate:'phosphate',nitrate:'nitrate',ammonia:'ammonia',dose:'dose'};
-const DATA_VAL_KEY   = {temp:'Temp',ph:'pH',salinity:'Salinity',alk:'ALK',calcium:'Calcium',phosphate:'Phosphate',nitrate:'Nitrate',ammonia:'Ammonia',dose:'dose'};
+const DATA_ARRAY_KEY = {temp:'temp',ph:'ph',salinity:'salinity',alk:'alk',calcium:'calcium',phosphate:'phosphate',nitrate:'nitrate',ammonia:'ammonia'};
+const DATA_VAL_KEY   = {temp:'Temp',ph:'pH',salinity:'Salinity',alk:'ALK',calcium:'Calcium',phosphate:'Phosphate',nitrate:'Nitrate',ammonia:'Ammonia'};
 
 function loadLogTestValues(date) {
   if (!date) return;
@@ -1428,6 +1470,163 @@ function deleteLogWC() {
       a.style.cssText = 'display:inline-block;margin-top:10px;font-family:Space Mono,monospace;font-size:10px;padding:7px 14px;background:rgba(231,76,60,0.12);border:1px solid #e74c3c;color:#e74c3c;border-radius:6px;text-decoration:none;cursor:pointer;';
       a.textContent = '⬇ Download updated tank_data.js';
       const msg = document.getElementById('logWCMsg');
+      msg.appendChild(document.createElement('br'));
+      msg.appendChild(a);
+    }
+  );
+}
+
+// ── LOG AFR DOSE
+let _logDoseFlatpickr = null;
+
+function openLogDose() {
+  document.getElementById('logDoseTankLabel').textContent = TANK_NAMES[currentTankKey] || currentTankKey;
+  document.getElementById('logDoseMsg').textContent = '';
+  document.getElementById('logDoseValue').value = '';
+  document.getElementById('logDoseModal').classList.add('open');
+
+  if (_logDoseFlatpickr) { _logDoseFlatpickr.destroy(); _logDoseFlatpickr = null; }
+
+  const doseDateSet = new Set((RAW[currentTankKey].dose || []).map(r => r.date));
+  const today = new Date().toISOString().split('T')[0];
+
+  const deleteBtn = document.getElementById('logDoseDeleteBtn');
+  deleteBtn.style.display = 'none';
+
+  function loadDoseValue(date) {
+    if (!date) return;
+    const entry = (RAW[currentTankKey].dose || []).find(r => r.date === date);
+    document.getElementById('logDoseValue').value = entry != null ? entry.dose : '';
+    deleteBtn.style.display = entry != null ? '' : 'none';
+    const msg = document.getElementById('logDoseMsg');
+    msg.style.color = 'var(--biolume)';
+    msg.textContent = entry != null ? '✎ Existing entry loaded — edit and save to update.' : '';
+  }
+
+  _logDoseFlatpickr = flatpickr('#logDoseDate', {
+    defaultDate: today,
+    maxDate: today,
+    dateFormat: 'Y-m-d',
+    onDayCreate(dObj, dStr, fp, dayElem) {
+      const d = dayElem.dateObj;
+      const iso = d.getFullYear() + '-'
+        + String(d.getMonth()+1).padStart(2,'0') + '-'
+        + String(d.getDate()).padStart(2,'0');
+      if (doseDateSet.has(iso)) dayElem.classList.add('has-dose');
+    },
+    onChange(selectedDates, dateStr) {
+      document.getElementById('logDoseMsg').textContent = '';
+      loadDoseValue(dateStr);
+    }
+  });
+
+  loadDoseValue(today);
+}
+
+function closeLogDose() {
+  document.getElementById('logDoseModal').classList.remove('open');
+}
+
+function submitLogDose() {
+  const date = document.getElementById('logDoseDate').value;
+  if (!date) {
+    document.getElementById('logDoseMsg').style.color = '#e74c3c';
+    document.getElementById('logDoseMsg').textContent = 'Please select a date.';
+    return;
+  }
+  const raw = document.getElementById('logDoseValue').value.trim();
+  if (raw === '') {
+    document.getElementById('logDoseMsg').style.color = '#f39c12';
+    document.getElementById('logDoseMsg').textContent = 'No value entered — nothing saved.';
+    return;
+  }
+  const val = parseFloat(raw);
+  if (isNaN(val)) {
+    document.getElementById('logDoseMsg').style.color = '#e74c3c';
+    document.getElementById('logDoseMsg').textContent = 'Invalid value.';
+    return;
+  }
+
+  const td = RAW[currentTankKey];
+  if (!td.dose) td.dose = [];
+  const arr = td.dose;
+
+  const idx = arr.findIndex(r => r.date === date);
+  if (idx >= 0) arr.splice(idx, 1);
+  const entry = {date, dose: val};
+  const insertAt = arr.findIndex(r => r.date > date);
+  if (insertAt === -1) arr.push(entry);
+  else arr.splice(insertAt, 0, entry);
+
+  // Recompute date window so new entry is included
+  const activePreset = document.querySelector('.preset-btn.active');
+  const presetMatch = activePreset && activePreset.getAttribute('onclick')?.match(/setPreset\((\d+)/);
+  const presetDays = presetMatch ? parseInt(presetMatch[1]) : 0;
+  const range = getDateRange();
+  if (presetDays > 0) {
+    dateTo   = range.max;
+    dateFrom = subtractDays(range.max, presetDays);
+    document.getElementById('dateFrom').value = dateFrom;
+    document.getElementById('dateTo').value   = dateTo;
+  }
+
+  initialized[currentTankKey] = false;
+  buildTankPanel(currentTankKey, currentTankKey);
+  initialized[currentTankKey] = true;
+  updateDoseToggleVisibility(currentTankKey);
+
+  const jsContent = 'const RAW = ' + JSON.stringify(RAW, null, 2) + ';\n';
+  saveData(jsContent,
+    () => closeLogDose(),
+    (errMsg) => {
+      document.getElementById('logDoseMsg').style.color = '#e74c3c';
+      document.getElementById('logDoseMsg').textContent = '✗ Server error: ' + errMsg;
+    },
+    (jsContent) => {
+      document.getElementById('logDoseMsg').style.color = '#f39c12';
+      document.getElementById('logDoseMsg').textContent = `✓ Saved dose for ${date}. No server detected — download to persist:`;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([jsContent], {type:'application/javascript'}));
+      a.download = 'tank_data.js';
+      a.style.cssText = 'display:inline-block;margin-top:10px;font-family:Space Mono,monospace;font-size:10px;padding:7px 14px;background:rgba(251,113,133,0.12);border:1px solid #fb7185;color:#fda4af;border-radius:6px;text-decoration:none;cursor:pointer;';
+      a.textContent = '⬇ Download updated tank_data.js';
+      const msg = document.getElementById('logDoseMsg');
+      msg.appendChild(document.createElement('br'));
+      msg.appendChild(a);
+    }
+  );
+}
+
+function deleteLogDose() {
+  const date = document.getElementById('logDoseDate').value;
+  if (!date) return;
+  const td = RAW[currentTankKey];
+  const arr = td.dose || [];
+  const idx = arr.findIndex(r => r.date === date);
+  if (idx < 0) return;
+  arr.splice(idx, 1);
+
+  initialized[currentTankKey] = false;
+  buildTankPanel(currentTankKey, currentTankKey);
+  initialized[currentTankKey] = true;
+  updateDoseToggleVisibility(currentTankKey);
+
+  const jsContent = 'const RAW = ' + JSON.stringify(RAW, null, 2) + ';\n';
+  saveData(jsContent,
+    () => closeLogDose(),
+    (errMsg) => {
+      document.getElementById('logDoseMsg').style.color = '#e74c3c';
+      document.getElementById('logDoseMsg').textContent = '✗ Server error: ' + errMsg;
+    },
+    (jsContent) => {
+      document.getElementById('logDoseMsg').style.color = '#f39c12';
+      document.getElementById('logDoseMsg').textContent = `✓ Deleted dose for ${date}. No server detected — download to persist:`;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([jsContent], {type:'application/javascript'}));
+      a.download = 'tank_data.js';
+      a.style.cssText = 'display:inline-block;margin-top:10px;font-family:Space Mono,monospace;font-size:10px;padding:7px 14px;background:rgba(251,113,133,0.12);border:1px solid #fb7185;color:#fda4af;border-radius:6px;text-decoration:none;cursor:pointer;';
+      a.textContent = '⬇ Download updated tank_data.js';
+      const msg = document.getElementById('logDoseMsg');
       msg.appendChild(document.createElement('br'));
       msg.appendChild(a);
     }
