@@ -727,6 +727,7 @@ function getDateRange() {
     (td[k]||[]).forEach(d=>allDates.push(d.date));
   });
   (td.blog || []).forEach(e => allDates.push(e.date));
+  (td.dose || []).forEach(r => allDates.push(r.date));
   allDates.sort();
   return { min: allDates[0], max: allDates[allDates.length-1] };
 }
@@ -1486,7 +1487,7 @@ function openLogDose() {
 
   if (_logDoseFlatpickr) { _logDoseFlatpickr.destroy(); _logDoseFlatpickr = null; }
 
-  const doseDates = (RAW[currentTankKey].dose || []).map(r => r.date);
+  const doseDateSet = new Set((RAW[currentTankKey].dose || []).map(r => r.date));
   const today = new Date().toISOString().split('T')[0];
 
   const deleteBtn = document.getElementById('logDoseDeleteBtn');
@@ -1511,7 +1512,7 @@ function openLogDose() {
       const iso = d.getFullYear() + '-'
         + String(d.getMonth()+1).padStart(2,'0') + '-'
         + String(d.getDate()).padStart(2,'0');
-      if (doseDates.includes(iso)) dayElem.classList.add('has-dose');
+      if (doseDateSet.has(iso)) dayElem.classList.add('has-dose');
     },
     onChange(selectedDates, dateStr) {
       document.getElementById('logDoseMsg').textContent = '';
@@ -1559,7 +1560,8 @@ function submitLogDose() {
 
   // Recompute date window so new entry is included
   const activePreset = document.querySelector('.preset-btn.active');
-  const presetDays = activePreset ? parseInt(activePreset.textContent) || 0 : 0;
+  const presetMatch = activePreset && activePreset.getAttribute('onclick')?.match(/setPreset\((\d+)/);
+  const presetDays = presetMatch ? parseInt(presetMatch[1]) : 0;
   const range = getDateRange();
   if (presetDays > 0) {
     dateTo   = range.max;
