@@ -693,8 +693,8 @@ function getDateRange() {
   // Compute global min/max across ALL data for current tank, including blog entries
   const td = RAW[currentTankKey];
   let allDates = [];
-  ['temp','ph','salinity','alk','calcium','phosphate','nitrate','ammonia'].forEach(k=>{
-    (td[k]||[]).forEach(d=>allDates.push(d.date));
+  PARAMETERS.filter(p=>p.hasKpi||p.hasChart).forEach(p=>{
+    (td[p.key]||[]).forEach(d=>allDates.push(d.date));
   });
   (td.blog || []).forEach(e => allDates.push(e.date));
   allDates.sort();
@@ -926,12 +926,10 @@ function makeChart(id, data, valueKey, color, tMin, tMax, canShowDose, masterLab
 
 function buildMasterLabels(tankKey) {
   const td = RAW[tankKey];
-  const metrics = ['temp','ph','salinity','alk','calcium','phosphate','nitrate','ammonia'];
-
   // Collect all measurement dates across every metric for this tank
   let dates = [];
-  metrics.forEach(k => {
-    (td[k] || []).forEach(d => { if (d.date) dates.push(d.date); });
+  PARAMETERS.filter(p=>p.hasKpi||p.hasChart).forEach(p => {
+    (td[p.key] || []).forEach(d => { if (d.date) dates.push(d.date); });
   });
 
   // Add water change dates if toggle is on
@@ -1644,8 +1642,8 @@ function buildTankPanel(panelId, tankKey) {
   </div>`;
 
   // Days since last water test (most recent date any parameter was recorded)
-  const allMetricDates = ['temp','ph','salinity','alk','calcium','phosphate','nitrate','ammonia']
-    .flatMap(k => (td[k] || []).map(r => r.date))
+  const allMetricDates = PARAMETERS.filter(p=>p.hasKpi||p.hasChart)
+    .flatMap(p => (td[p.key] || []).map(r => r.date))
     .filter(d => d <= _today)
     .sort();
   const lastTest = allMetricDates[allMetricDates.length - 1] || null;
