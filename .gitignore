@@ -1,8 +1,8 @@
 *backup*
 *.csv
 tank_data.js
-equipment.json
-tanks.json
-targets.json
+config/equipment.json
+config/tanks.json
+config/targets.json
 *.sh
 version.json

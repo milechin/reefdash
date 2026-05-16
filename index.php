@@ -14,11 +14,11 @@ $isDev = str_contains($_SERVER['REQUEST_URI'] ?? '', 'reefdash-dev');
 $versionFile = __DIR__ . '/version.json';
 $versionInfo = file_exists($versionFile) ? (json_decode(file_get_contents($versionFile), true) ?: []) : [];
 $versionLabel = isset($versionInfo['version']) ? $versionInfo['version'] . ' (' . $versionInfo['git'] . ')' : null;
-$targetsFile = __DIR__ . '/targets.json';
+$targetsFile = __DIR__ . '/config/targets.json';
 $savedTargets = file_exists($targetsFile) ? (json_decode(file_get_contents($targetsFile), true) ?: []) : [];
-$tanksFile = __DIR__ . '/tanks.json';
+$tanksFile = __DIR__ . '/config/tanks.json';
 $tanks = file_exists($tanksFile) ? (json_decode(file_get_contents($tanksFile), true) ?: []) : [];
-$equipFile = __DIR__ . '/equipment.json';
+$equipFile = __DIR__ . '/config/equipment.json';
 $equipment = file_exists($equipFile) ? (json_decode(file_get_contents($equipFile), true) ?: []) : [];
 ?>
 <script src="tank_data.js?v=<?php echo $v; ?>"></script>

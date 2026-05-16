@@ -16,9 +16,9 @@ if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
     exit;
 }
 
-$filePath = __DIR__ . '/targets.json';
+$filePath = __DIR__ . '/config/targets.json';
 
-if (!is_writable(__DIR__)) {
+if (!is_writable(__DIR__ . '/config')) {
     http_response_code(500);
     echo json_encode(['ok' => false, 'error' => 'Directory not writable']);
     exit;

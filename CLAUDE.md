@@ -23,9 +23,9 @@ Open http://localhost:8080. No Node.js, no npm, no build step.
 - `save.php` — POST endpoint; validates content starts with `const RAW`, writes `tank_data.js`
 - `save_targets.php` — POST endpoint; writes raw JSON body to `targets.json`
 - `save_equipment.php` — POST endpoint; writes raw JSON body to `equipment.json`
-- `tanks.json` — tank definitions: `[{key, label, emoji}]`; drives tabs and panels
-- `targets.json` — persisted min/max target values per parameter
-- `equipment.json` — per-tank equipment: `[{tank, item, purchased, expires, comment}]`
+- `config/tanks.json` — tank definitions: `[{key, label, emoji}]`; drives tabs and panels
+- `config/targets.json` — persisted min/max target values per parameter
+- `config/equipment.json` — per-tank equipment: `[{tank, item, purchased, expires, comment}]`
 - `Fish Tank Log - Display.csv` — source for bulk nitrate import (gitignored)
 - `templates/` — reference templates for all gitignored data files (`tank_data.template.js`, `tanks.template.json`, `targets.template.json`, `equipment.template.json`); not deployed
 
