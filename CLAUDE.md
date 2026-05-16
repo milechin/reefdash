@@ -27,6 +27,7 @@ Open http://localhost:8080. No Node.js, no npm, no build step.
 - `targets.json` — persisted min/max target values per parameter
 - `equipment.json` — per-tank equipment: `[{tank, item, purchased, expires, comment}]`
 - `Fish Tank Log - Display.csv` — source for bulk nitrate import (gitignored)
+- `templates/` — reference templates for all gitignored data files (`tank_data.template.js`, `tanks.template.json`, `targets.template.json`, `equipment.template.json`); not deployed
 
 ## Data Architecture
 `RAW` is a single JS object (the entire `tank_data.js` file):
