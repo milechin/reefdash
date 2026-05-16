@@ -4,5 +4,6 @@
     "targets":   "config/targets.json",
     "equipment": "config/equipment.json",
     "version":   "version.json",
-    "devMarker": "reefdash-dev"
+    "devMarker": "reefdash-dev",
+    "parameters": "config/parameters.json"
 }

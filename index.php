@@ -22,12 +22,15 @@ $tanksFile   = __DIR__ . '/' . ($appConfig['tanks']     ?? 'config/tanks.json');
 $tanks = file_exists($tanksFile) ? (json_decode(file_get_contents($tanksFile), true) ?: []) : [];
 $equipFile   = __DIR__ . '/' . ($appConfig['equipment'] ?? 'config/equipment.json');
 $equipment = file_exists($equipFile) ? (json_decode(file_get_contents($equipFile), true) ?: []) : [];
+$parametersFile = __DIR__ . '/' . ($appConfig['parameters'] ?? 'config/parameters.json');
+$parametersData = file_exists($parametersFile) ? (json_decode(file_get_contents($parametersFile), true) ?: []) : [];
 ?>
 <script src="<?php echo htmlspecialchars($tankDataPath); ?>?v=<?php echo $v; ?>"></script>
 <script>
 const SAVED_TARGETS = <?php echo json_encode($savedTargets); ?>;
 const TANK_CONFIGS  = <?php echo json_encode($tanks); ?>;
 const EQUIPMENT_RAW = <?php echo json_encode($equipment); ?>;
+const PARAMETERS    = <?php echo json_encode($parametersData); ?>;
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
@@ -1033,27 +1036,6 @@ function updateDoseToggleVisibility(tankKey) {
   const hasData = (DOSE_DATA[tankKey] || []).length > 0;
   btn.classList.toggle('hidden-mode', !hasData);
 }
-
-// ── KPI DEFINITIONS
-// Single source of truth for all water parameters.
-// Add a new parameter here only — KPI_DEFS, CHART_DEFS, LOG_TEST_FIELDS,
-// DATA_VAL_KEY, and DATA_KEY_MAP are all derived from this array.
-//
-// hasChart: true  → appears as a trend chart
-// hasKpi:   true  → appears as a KPI card
-// (dose and ammonia are exceptions — see flags below)
-const PARAMETERS = [
-  {key:'temp',      valKey:'Temp',      label:'Temperature', chartLabel:'TEMPERATURE °F', unit:'°F',     dec:1,    step:'0.1',   color:'#00d4ff', icon:'🌡️', tMin:76,    tMax:80,    showDose:false, hasChart:true,  hasKpi:true },
-  {key:'ph',        valKey:'pH',        label:'pH',          chartLabel:'pH',             unit:'',       dec:2,    step:'0.01',  color:'#a78bfa', icon:'⚗️', tMin:8.1,   tMax:8.5,   showDose:true,  hasChart:true,  hasKpi:true },
-  {key:'salinity',  valKey:'Salinity',  label:'Salinity',    chartLabel:'SALINITY',       unit:'SG',     dec:3,    step:'0.001', color:'#2ecc71', icon:'🧂', tMin:1.025, tMax:1.027, showDose:false, hasChart:true,  hasKpi:true },
-  {key:'alk',       valKey:'ALK',       label:'Alkalinity',  chartLabel:'ALKALINITY dKH', unit:'dKH',    dec:1,    step:'0.1',   color:'#ffd166', icon:'💧', tMin:11,    tMax:12,    showDose:true,  hasChart:true,  hasKpi:true },
-  {key:'calcium',   valKey:'Calcium',   label:'Calcium',     chartLabel:'CALCIUM ppm',    unit:'ppm',    dec:0,    step:'1',     color:'#f39c12', icon:'🦴', tMin:435,   tMax:465,   showDose:true,  hasChart:true,  hasKpi:true },
-  {key:'phosphate', valKey:'Phosphate', label:'Phosphate',   chartLabel:'PHOSPHATE ppm',  unit:'ppm',    dec:3,    step:'0.001', color:'#ec4899', icon:'🔬', tMin:0,     tMax:0.03,  showDose:false, hasChart:true,  hasKpi:true },
-  {key:'nitrate',   valKey:'Nitrate',   label:'Nitrate',     chartLabel:'NITRATE ppm',    unit:'ppm',    dec:2,    step:'0.1',   color:'#06b6d4', icon:'🧪', tMin:0,     tMax:5,     showDose:false, hasChart:true,  hasKpi:true },
-  {key:'ammonia',   valKey:'Ammonia',   label:'Ammonia',     chartLabel:null,             unit:'ppm',    dec:3,    step:'0.01',  color:'#84cc16', icon:'☢️', tMin:0,     tMax:0.05,  showDose:false, hasChart:false, hasKpi:true },
-  {key:'magnesium', valKey:'Magnesium', label:'Magnesium',   chartLabel:'MAGNESIUM ppm',  unit:'ppm',    dec:0,    step:'1',     color:'#14b8a6', icon:'🪨', tMin:1250,  tMax:1350,  showDose:true,  hasChart:true,  hasKpi:true },
-  {key:'dose',      valKey:'dose',      label:'AFR Dose',    chartLabel:null,             unit:'ml/day', dec:null, step:'0.1',   color:'#fb7185', icon:null, tMin:null,  tMax:null,  showDose:false, hasChart:false, hasKpi:false},
-];
 
 const KPI_DEFS        = PARAMETERS.filter(p=>p.hasKpi).map(p=>({key:p.key, label:p.label, unit:p.unit, dec:p.dec, min:p.tMin, max:p.tMax, color:p.color, icon:p.icon}));
 const CHART_DEFS      = PARAMETERS.filter(p=>p.hasChart).map(p=>({key:p.valKey, label:p.chartLabel, color:p.color, tMin:p.tMin, tMax:p.tMax, showDose:p.showDose}));
