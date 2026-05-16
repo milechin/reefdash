@@ -1035,30 +1035,31 @@ function updateDoseToggleVisibility(tankKey) {
 }
 
 // ── KPI DEFINITIONS
-const KPI_DEFS = [
-  {key:'temp',    label:'Temperature', unit:'°F',  dec:1, min:76,    max:80,    color:'#00d4ff', icon:'🌡️'},
-  {key:'ph',      label:'pH',          unit:'',    dec:2, min:8.1,   max:8.5,   color:'#a78bfa', icon:'⚗️'},
-  {key:'salinity',label:'Salinity',    unit:'SG',  dec:3, min:1.025, max:1.027, color:'#2ecc71', icon:'🧂'},
-  {key:'alk',     label:'Alkalinity',  unit:'dKH', dec:1, min:11,    max:12,    color:'#ffd166', icon:'💧'},
-  {key:'calcium', label:'Calcium',     unit:'ppm', dec:0, min:435,   max:465,   color:'#f39c12', icon:'🦴'},
-  {key:'phosphate',label:'Phosphate',  unit:'ppm', dec:3, min:0,     max:0.03,  color:'#ec4899', icon:'🔬'},
-  {key:'nitrate', label:'Nitrate',     unit:'ppm', dec:2, min:0,     max:0.3,   color:'#06b6d4', icon:'🧪'},
-  {key:'ammonia',   label:'Ammonia',   unit:'ppm', dec:3, min:0,     max:0.05,   color:'#84cc16', icon:'☢️'},
-  {key:'magnesium', label:'Magnesium', unit:'ppm', dec:0, min:1250,  max:1350,   color:'#14b8a6', icon:'🪨'},
+// Single source of truth for all water parameters.
+// Add a new parameter here only — KPI_DEFS, CHART_DEFS, LOG_TEST_FIELDS,
+// DATA_VAL_KEY, and DATA_KEY_MAP are all derived from this array.
+//
+// hasChart: true  → appears as a trend chart
+// hasKpi:   true  → appears as a KPI card
+// (dose and ammonia are exceptions — see flags below)
+const PARAMETERS = [
+  {key:'temp',      valKey:'Temp',      label:'Temperature', chartLabel:'TEMPERATURE °F', unit:'°F',     dec:1,    step:'0.1',   color:'#00d4ff', icon:'🌡️', tMin:76,    tMax:80,    showDose:false, hasChart:true,  hasKpi:true },
+  {key:'ph',        valKey:'pH',        label:'pH',          chartLabel:'pH',             unit:'',       dec:2,    step:'0.01',  color:'#a78bfa', icon:'⚗️', tMin:8.1,   tMax:8.5,   showDose:true,  hasChart:true,  hasKpi:true },
+  {key:'salinity',  valKey:'Salinity',  label:'Salinity',    chartLabel:'SALINITY',       unit:'SG',     dec:3,    step:'0.001', color:'#2ecc71', icon:'🧂', tMin:1.025, tMax:1.027, showDose:false, hasChart:true,  hasKpi:true },
+  {key:'alk',       valKey:'ALK',       label:'Alkalinity',  chartLabel:'ALKALINITY dKH', unit:'dKH',    dec:1,    step:'0.1',   color:'#ffd166', icon:'💧', tMin:11,    tMax:12,    showDose:true,  hasChart:true,  hasKpi:true },
+  {key:'calcium',   valKey:'Calcium',   label:'Calcium',     chartLabel:'CALCIUM ppm',    unit:'ppm',    dec:0,    step:'1',     color:'#f39c12', icon:'🦴', tMin:435,   tMax:465,   showDose:true,  hasChart:true,  hasKpi:true },
+  {key:'phosphate', valKey:'Phosphate', label:'Phosphate',   chartLabel:'PHOSPHATE ppm',  unit:'ppm',    dec:3,    step:'0.001', color:'#ec4899', icon:'🔬', tMin:0,     tMax:0.03,  showDose:false, hasChart:true,  hasKpi:true },
+  {key:'nitrate',   valKey:'Nitrate',   label:'Nitrate',     chartLabel:'NITRATE ppm',    unit:'ppm',    dec:2,    step:'0.1',   color:'#06b6d4', icon:'🧪', tMin:0,     tMax:5,     showDose:false, hasChart:true,  hasKpi:true },
+  {key:'ammonia',   valKey:'Ammonia',   label:'Ammonia',     chartLabel:null,             unit:'ppm',    dec:3,    step:'0.01',  color:'#84cc16', icon:'☢️', tMin:0,     tMax:0.05,  showDose:false, hasChart:false, hasKpi:true },
+  {key:'magnesium', valKey:'Magnesium', label:'Magnesium',   chartLabel:'MAGNESIUM ppm',  unit:'ppm',    dec:0,    step:'1',     color:'#14b8a6', icon:'🪨', tMin:1250,  tMax:1350,  showDose:false, hasChart:true,  hasKpi:true },
+  {key:'dose',      valKey:'dose',      label:'AFR Dose',    chartLabel:null,             unit:'ml/day', dec:null, step:'0.1',   color:'#fb7185', icon:null, tMin:null,  tMax:null,  showDose:false, hasChart:false, hasKpi:false},
 ];
 
-const CHART_DEFS = [
-  {key:'Temp',      label:'TEMPERATURE °F',  color:'#00d4ff', tMin:76,   tMax:80,    showDose:false},
-  {key:'pH',        label:'pH',              color:'#a78bfa', tMin:8.1,  tMax:8.5,   showDose:true},
-  {key:'Salinity',  label:'SALINITY',        color:'#2ecc71', tMin:1.025,tMax:1.027, showDose:false},
-  {key:'ALK',       label:'ALKALINITY dKH',  color:'#ffd166', tMin:11,   tMax:12,    showDose:true},
-  {key:'Calcium',   label:'CALCIUM ppm',     color:'#f39c12', tMin:435,  tMax:465,   showDose:true},
-  {key:'Phosphate', label:'PHOSPHATE ppm',   color:'#ec4899', tMin:0,    tMax:0.03,  showDose:false},
-  {key:'Nitrate',    label:'NITRATE ppm',    color:'#06b6d4', tMin:0,    tMax:5,     showDose:false},
-  {key:'Magnesium',  label:'MAGNESIUM ppm',  color:'#14b8a6', tMin:1250, tMax:1350,  showDose:false},
-];
-
-const DATA_KEY_MAP = {Temp:'temp',pH:'ph',Salinity:'salinity',ALK:'alk',Calcium:'calcium',Phosphate:'phosphate',Nitrate:'nitrate',Ammonia:'ammonia',Magnesium:'magnesium'};
+const KPI_DEFS        = PARAMETERS.filter(p=>p.hasKpi).map(p=>({key:p.key, label:p.label, unit:p.unit, dec:p.dec, min:p.tMin, max:p.tMax, color:p.color, icon:p.icon}));
+const CHART_DEFS      = PARAMETERS.filter(p=>p.hasChart).map(p=>({key:p.valKey, label:p.chartLabel, color:p.color, tMin:p.tMin, tMax:p.tMax, showDose:p.showDose}));
+const LOG_TEST_FIELDS = PARAMETERS.map(p=>({key:p.key, label:p.label, unit:p.unit, step:p.step, color:p.color}));
+const DATA_VAL_KEY    = Object.fromEntries(PARAMETERS.map(p=>[p.key, p.valKey]));
+const DATA_KEY_MAP    = Object.fromEntries(PARAMETERS.filter(p=>p.hasChart).map(p=>[p.valKey, p.key]));
 
 // Store defaults for reset (before applying saved targets)
 const CHART_DEFS_DEFAULTS = CHART_DEFS.map(cd => ({...cd}));
@@ -1142,27 +1143,12 @@ function resetTargets() {
 }
 
 // ── LOG TEST MODAL
-const LOG_TEST_FIELDS = [
-  {key:'temp',     label:'Temperature', unit:'°F',  step:'0.1', color:'#00d4ff'},
-  {key:'ph',       label:'pH',          unit:'',    step:'0.01',color:'#a78bfa'},
-  {key:'salinity', label:'Salinity',    unit:'SG',  step:'0.001',color:'#2ecc71'},
-  {key:'alk',      label:'Alkalinity',  unit:'dKH', step:'0.1', color:'#ffd166'},
-  {key:'calcium',  label:'Calcium',     unit:'ppm', step:'1',   color:'#f39c12'},
-  {key:'phosphate',label:'Phosphate',   unit:'ppm', step:'0.001',color:'#ec4899'},
-  {key:'nitrate',  label:'Nitrate',     unit:'ppm',    step:'0.1',  color:'#06b6d4'},
-  {key:'ammonia',   label:'Ammonia',   unit:'ppm',    step:'0.01', color:'#84cc16'},
-  {key:'magnesium', label:'Magnesium', unit:'ppm',    step:'1',    color:'#14b8a6'},
-  {key:'dose',      label:'AFR Dose',  unit:'ml/day', step:'0.1',  color:'#fb7185'},
-];
-
-const DATA_ARRAY_KEY = {temp:'temp',ph:'ph',salinity:'salinity',alk:'alk',calcium:'calcium',phosphate:'phosphate',nitrate:'nitrate',ammonia:'ammonia',magnesium:'magnesium',dose:'dose'};
-const DATA_VAL_KEY   = {temp:'Temp',ph:'pH',salinity:'Salinity',alk:'ALK',calcium:'Calcium',phosphate:'Phosphate',nitrate:'Nitrate',ammonia:'Ammonia',magnesium:'Magnesium',dose:'dose'};
 
 function loadLogTestValues(date) {
   if (!date) return;
   const td = RAW[currentTankKey];
   LOG_TEST_FIELDS.forEach(f => {
-    const arrKey = DATA_ARRAY_KEY[f.key];
+    const arrKey = f.key;
     const valKey = DATA_VAL_KEY[f.key];
     const entry = td[arrKey].find(r => r.date === date);
     const input = document.getElementById('lt_' + f.key);
@@ -1170,7 +1156,7 @@ function loadLogTestValues(date) {
   });
   const msg = document.getElementById('logTestMsg');
   const hasData = LOG_TEST_FIELDS.some(f => {
-    const entry = td[DATA_ARRAY_KEY[f.key]].find(r => r.date === date);
+    const entry = td[f.key].find(r => r.date === date);
     return entry != null;
   });
   msg.style.color = 'var(--biolume)';
@@ -1184,7 +1170,7 @@ function getTestDatesForTank(tankKey) {
   const td = RAW[tankKey];
   const dateSet = new Set();
   LOG_TEST_FIELDS.forEach(f => {
-    td[DATA_ARRAY_KEY[f.key]].forEach(r => dateSet.add(r.date));
+    td[f.key].forEach(r => dateSet.add(r.date));
   });
   return Array.from(dateSet);
 }
@@ -1252,7 +1238,7 @@ function submitLogTest() {
     const val = parseFloat(raw);
     if (isNaN(val)) return;
 
-    const arrKey = DATA_ARRAY_KEY[f.key];
+    const arrKey = f.key;
     const valKey = DATA_VAL_KEY[f.key];
     const arr = td[arrKey];
 
