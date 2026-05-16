@@ -84,7 +84,10 @@ def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
     check_only = '--check' in sys.argv
 
-    default = Path(__file__).parent.parent / 'data' / 'tank_data.js'
+    project_root = Path(__file__).parent.parent
+    config_file  = project_root / 'reefdash.json'
+    cfg = json.loads(config_file.read_text()) if config_file.exists() else {}
+    default = project_root / cfg.get('tankData', 'data/tank_data.js')
     path = Path(args[0]) if args else default
 
     if not path.exists():

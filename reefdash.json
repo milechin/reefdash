@@ -1,0 +1,6 @@
+{
+    "tankData":  "data/tank_data.js",
+    "tanks":     "config/tanks.json",
+    "targets":   "config/targets.json",
+    "equipment": "config/equipment.json"
+}

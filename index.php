@@ -9,19 +9,21 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <?php
-$v = file_exists('data/tank_data.js') ? filemtime('data/tank_data.js') : time();
+$appConfig  = json_decode(file_get_contents(__DIR__ . '/reefdash.json'), true) ?: [];
+$tankDataPath = $appConfig['tankData']  ?? 'data/tank_data.js';
+$v = file_exists($tankDataPath) ? filemtime($tankDataPath) : time();
 $isDev = str_contains($_SERVER['REQUEST_URI'] ?? '', 'reefdash-dev');
 $versionFile = __DIR__ . '/version.json';
 $versionInfo = file_exists($versionFile) ? (json_decode(file_get_contents($versionFile), true) ?: []) : [];
 $versionLabel = isset($versionInfo['version']) ? $versionInfo['version'] . ' (' . $versionInfo['git'] . ')' : null;
-$targetsFile = __DIR__ . '/config/targets.json';
+$targetsFile = __DIR__ . '/' . ($appConfig['targets']   ?? 'config/targets.json');
 $savedTargets = file_exists($targetsFile) ? (json_decode(file_get_contents($targetsFile), true) ?: []) : [];
-$tanksFile = __DIR__ . '/config/tanks.json';
+$tanksFile   = __DIR__ . '/' . ($appConfig['tanks']     ?? 'config/tanks.json');
 $tanks = file_exists($tanksFile) ? (json_decode(file_get_contents($tanksFile), true) ?: []) : [];
-$equipFile = __DIR__ . '/config/equipment.json';
+$equipFile   = __DIR__ . '/' . ($appConfig['equipment'] ?? 'config/equipment.json');
 $equipment = file_exists($equipFile) ? (json_decode(file_get_contents($equipFile), true) ?: []) : [];
 ?>
-<script src="data/tank_data.js?v=<?php echo $v; ?>"></script>
+<script src="<?php echo htmlspecialchars($tankDataPath); ?>?v=<?php echo $v; ?>"></script>
 <script>
 const SAVED_TARGETS = <?php echo json_encode($savedTargets); ?>;
 const TANK_CONFIGS  = <?php echo json_encode($tanks); ?>;

@@ -39,11 +39,11 @@ try {
         throw new Exception('Content does not look like tank_data.js');
     }
 
-    $filePath = __DIR__ . '/data/tank_data.js';
+    $appConfig = json_decode(file_get_contents(__DIR__ . '/reefdash.json'), true) ?: [];
+    $filePath  = __DIR__ . '/' . ($appConfig['tankData'] ?? 'data/tank_data.js');
 
-    // Check the data directory is writable
-    if (!is_writable(__DIR__ . '/data')) {
-        throw new Exception('Directory not writable: ' . __DIR__ . '/data');
+    if (!is_writable(dirname($filePath))) {
+        throw new Exception('Directory not writable: ' . dirname($filePath));
     }
 
     // Write new file

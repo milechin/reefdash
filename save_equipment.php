@@ -16,9 +16,10 @@ if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
     exit;
 }
 
-$filePath = __DIR__ . '/config/equipment.json';
+$appConfig = json_decode(file_get_contents(__DIR__ . '/reefdash.json'), true) ?: [];
+$filePath  = __DIR__ . '/' . ($appConfig['equipment'] ?? 'config/equipment.json');
 
-if (!is_writable(__DIR__ . '/config')) {
+if (!is_writable(dirname($filePath))) {
     http_response_code(500);
     echo json_encode(['ok' => false, 'error' => 'Directory not writable']);
     exit;
