@@ -10,6 +10,10 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <?php
 $v = file_exists('tank_data.js') ? filemtime('tank_data.js') : time();
+$isDev = str_contains($_SERVER['REQUEST_URI'] ?? '', 'reefdash-dev');
+$versionFile = __DIR__ . '/version.json';
+$versionInfo = file_exists($versionFile) ? (json_decode(file_get_contents($versionFile), true) ?: []) : [];
+$versionLabel = isset($versionInfo['version']) ? $versionInfo['version'] . ' (' . $versionInfo['git'] . ')' : null;
 $targetsFile = __DIR__ . '/targets.json';
 $savedTargets = file_exists($targetsFile) ? (json_decode(file_get_contents($targetsFile), true) ?: []) : [];
 $tanksFile = __DIR__ . '/tanks.json';
@@ -41,6 +45,8 @@ const EQUIPMENT_RAW = <?php echo json_encode($equipment); ?>;
   --coral: #ff6b6b;
   --sand: #ffd166;
 }
+.dev-banner { position:fixed; top:0; left:0; right:0; z-index:9999; background:#f39c12; color:#000; text-align:center; font-family:'Space Mono',monospace; font-size:0.75rem; font-weight:700; letter-spacing:0.1em; padding:4px 0; }
+.version-badge { position:fixed; bottom:10px; right:12px; z-index:9999; background:rgba(0,0,0,0.4); color:rgba(255,255,255,0.3); font-family:'Space Mono',monospace; font-size:0.65rem; padding:3px 7px; border-radius:4px; pointer-events:none; }
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:var(--deep); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; overflow-x:hidden; }
 
@@ -374,6 +380,12 @@ tr:last-child td { border:none; }
 </style>
 </head>
 <body>
+
+<?php if ($isDev): ?>
+<div class="dev-banner">⚠ DEVELOPMENT BUILD — <?php echo htmlspecialchars($_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']); ?><?php echo $versionLabel ? ' — ' . htmlspecialchars($versionLabel) : ''; ?></div>
+<?php elseif ($versionLabel): ?>
+<div class="version-badge"><?php echo htmlspecialchars($versionLabel); ?></div>
+<?php endif; ?>
 
 <div class="bubbles" id="bubbles"></div>
 

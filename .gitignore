@@ -5,3 +5,5 @@
 equipment.json
 tanks.json
 targets.json
+*.sh
+version.json
