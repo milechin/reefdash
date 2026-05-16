@@ -1,3 +1,4 @@
+.DS_Store
 *backup*
 *.csv
 data/tank_data.js
@@ -6,3 +7,4 @@ config/tanks.json
 config/targets.json
 scripts/deploy.sh
 version.json
+reefdash.json

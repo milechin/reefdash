@@ -12,8 +12,8 @@
 $appConfig  = json_decode(file_get_contents(__DIR__ . '/reefdash.json'), true) ?: [];
 $tankDataPath = $appConfig['tankData']  ?? 'data/tank_data.js';
 $v = file_exists($tankDataPath) ? filemtime($tankDataPath) : time();
-$isDev = str_contains($_SERVER['REQUEST_URI'] ?? '', 'reefdash-dev');
-$versionFile = __DIR__ . '/version.json';
+$isDev = str_contains($_SERVER['REQUEST_URI'] ?? '', $appConfig['devMarker'] ?? 'reefdash-dev');
+$versionFile = __DIR__ . '/' . ($appConfig['version'] ?? 'version.json');
 $versionInfo = file_exists($versionFile) ? (json_decode(file_get_contents($versionFile), true) ?: []) : [];
 $versionLabel = isset($versionInfo['version']) ? $versionInfo['version'] . ' (' . $versionInfo['git'] . ')' : null;
 $targetsFile = __DIR__ . '/' . ($appConfig['targets']   ?? 'config/targets.json');
