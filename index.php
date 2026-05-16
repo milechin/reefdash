@@ -1051,7 +1051,7 @@ const PARAMETERS = [
   {key:'phosphate', valKey:'Phosphate', label:'Phosphate',   chartLabel:'PHOSPHATE ppm',  unit:'ppm',    dec:3,    step:'0.001', color:'#ec4899', icon:'🔬', tMin:0,     tMax:0.03,  showDose:false, hasChart:true,  hasKpi:true },
   {key:'nitrate',   valKey:'Nitrate',   label:'Nitrate',     chartLabel:'NITRATE ppm',    unit:'ppm',    dec:2,    step:'0.1',   color:'#06b6d4', icon:'🧪', tMin:0,     tMax:5,     showDose:false, hasChart:true,  hasKpi:true },
   {key:'ammonia',   valKey:'Ammonia',   label:'Ammonia',     chartLabel:null,             unit:'ppm',    dec:3,    step:'0.01',  color:'#84cc16', icon:'☢️', tMin:0,     tMax:0.05,  showDose:false, hasChart:false, hasKpi:true },
-  {key:'magnesium', valKey:'Magnesium', label:'Magnesium',   chartLabel:'MAGNESIUM ppm',  unit:'ppm',    dec:0,    step:'1',     color:'#14b8a6', icon:'🪨', tMin:1250,  tMax:1350,  showDose:false, hasChart:true,  hasKpi:true },
+  {key:'magnesium', valKey:'Magnesium', label:'Magnesium',   chartLabel:'MAGNESIUM ppm',  unit:'ppm',    dec:0,    step:'1',     color:'#14b8a6', icon:'🪨', tMin:1250,  tMax:1350,  showDose:true,  hasChart:true,  hasKpi:true },
   {key:'dose',      valKey:'dose',      label:'AFR Dose',    chartLabel:null,             unit:'ml/day', dec:null, step:'0.1',   color:'#fb7185', icon:null, tMin:null,  tMax:null,  showDose:false, hasChart:false, hasKpi:false},
 ];
 
