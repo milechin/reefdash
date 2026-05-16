@@ -16,7 +16,7 @@ if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
     exit;
 }
 
-$appConfig = json_decode(file_get_contents(__DIR__ . '/reefdash.json'), true) ?: [];
+$appConfig = json_decode(file_get_contents(__DIR__ . '/config/reefdash.json'), true) ?: [];
 $filePath  = __DIR__ . '/' . ($appConfig['targets'] ?? 'config/targets.json');
 
 if (!is_writable(dirname($filePath))) {

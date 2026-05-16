@@ -85,7 +85,7 @@ def main():
     check_only = '--check' in sys.argv
 
     project_root = Path(__file__).parent.parent
-    config_file  = project_root / 'reefdash.json'
+    config_file  = project_root / 'config' / 'reefdash.json'
     cfg = json.loads(config_file.read_text()) if config_file.exists() else {}
     default = project_root / cfg.get('tankData', 'data/tank_data.js')
     path = Path(args[0]) if args else default

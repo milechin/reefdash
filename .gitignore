@@ -7,4 +7,4 @@ config/tanks.json
 config/targets.json
 scripts/deploy.sh
 version.json
-reefdash.json
+config/reefdash.json

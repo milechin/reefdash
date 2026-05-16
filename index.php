@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <?php
-$appConfig  = json_decode(file_get_contents(__DIR__ . '/reefdash.json'), true) ?: [];
+$appConfig  = json_decode(file_get_contents(__DIR__ . '/config/reefdash.json'), true) ?: [];
 $tankDataPath = $appConfig['tankData']  ?? 'data/tank_data.js';
 $v = file_exists($tankDataPath) ? filemtime($tankDataPath) : time();
 $isDev = str_contains($_SERVER['REQUEST_URI'] ?? '', $appConfig['devMarker'] ?? 'reefdash-dev');

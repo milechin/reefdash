@@ -39,7 +39,7 @@ try {
         throw new Exception('Content does not look like tank_data.js');
     }
 
-    $appConfig = json_decode(file_get_contents(__DIR__ . '/reefdash.json'), true) ?: [];
+    $appConfig = json_decode(file_get_contents(__DIR__ . '/config/reefdash.json'), true) ?: [];
     $filePath  = __DIR__ . '/' . ($appConfig['tankData'] ?? 'data/tank_data.js');
 
     if (!is_writable(dirname($filePath))) {
