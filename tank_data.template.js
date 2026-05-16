@@ -1,6 +1,10 @@
 // Schema template for tank_data.js — tracks structure, not data.
 // Production tank_data.js is gitignored (it's the live database).
 //
+// SCHEMA VERSION: increment SCHEMA_VERSION and RAW._schemaVersion together
+// whenever the RAW structure changes, then migrate the production file.
+const SCHEMA_VERSION = 1;
+//
 // VALUE KEY CASING — must match exactly when adding entries:
 //   temp      → Temp
 //   ph        → pH
@@ -17,6 +21,7 @@
 // the browser. No migration framework — changes are documented in git commit diffs.
 
 const RAW = {
+  "_schemaVersion": 1,
   "display": {
     "latest": {
       "temp": 0,
