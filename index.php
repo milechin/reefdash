@@ -1043,7 +1043,8 @@ const KPI_DEFS = [
   {key:'calcium', label:'Calcium',     unit:'ppm', dec:0, min:435,   max:465,   color:'#f39c12', icon:'🦴'},
   {key:'phosphate',label:'Phosphate',  unit:'ppm', dec:3, min:0,     max:0.03,  color:'#ec4899', icon:'🔬'},
   {key:'nitrate', label:'Nitrate',     unit:'ppm', dec:2, min:0,     max:0.3,   color:'#06b6d4', icon:'🧪'},
-  {key:'ammonia', label:'Ammonia',     unit:'ppm', dec:3, min:0,     max:0.05,  color:'#84cc16', icon:'☢️'},
+  {key:'ammonia',   label:'Ammonia',   unit:'ppm', dec:3, min:0,     max:0.05,   color:'#84cc16', icon:'☢️'},
+  {key:'magnesium', label:'Magnesium', unit:'ppm', dec:0, min:1250,  max:1350,   color:'#14b8a6', icon:'🪨'},
 ];
 
 const CHART_DEFS = [
@@ -1053,10 +1054,11 @@ const CHART_DEFS = [
   {key:'ALK',       label:'ALKALINITY dKH',  color:'#ffd166', tMin:11,   tMax:12,    showDose:true},
   {key:'Calcium',   label:'CALCIUM ppm',     color:'#f39c12', tMin:435,  tMax:465,   showDose:true},
   {key:'Phosphate', label:'PHOSPHATE ppm',   color:'#ec4899', tMin:0,    tMax:0.03,  showDose:false},
-  {key:'Nitrate',   label:'NITRATE ppm',    color:'#06b6d4', tMin:0,    tMax:5,     showDose:false},
+  {key:'Nitrate',    label:'NITRATE ppm',    color:'#06b6d4', tMin:0,    tMax:5,     showDose:false},
+  {key:'Magnesium',  label:'MAGNESIUM ppm',  color:'#14b8a6', tMin:1250, tMax:1350,  showDose:false},
 ];
 
-const DATA_KEY_MAP = {Temp:'temp',pH:'ph',Salinity:'salinity',ALK:'alk',Calcium:'calcium',Phosphate:'phosphate',Nitrate:'nitrate',Ammonia:'ammonia'};
+const DATA_KEY_MAP = {Temp:'temp',pH:'ph',Salinity:'salinity',ALK:'alk',Calcium:'calcium',Phosphate:'phosphate',Nitrate:'nitrate',Ammonia:'ammonia',Magnesium:'magnesium'};
 
 // Store defaults for reset (before applying saved targets)
 const CHART_DEFS_DEFAULTS = CHART_DEFS.map(cd => ({...cd}));
@@ -1148,12 +1150,13 @@ const LOG_TEST_FIELDS = [
   {key:'calcium',  label:'Calcium',     unit:'ppm', step:'1',   color:'#f39c12'},
   {key:'phosphate',label:'Phosphate',   unit:'ppm', step:'0.001',color:'#ec4899'},
   {key:'nitrate',  label:'Nitrate',     unit:'ppm',    step:'0.1',  color:'#06b6d4'},
-  {key:'ammonia',  label:'Ammonia',     unit:'ppm',    step:'0.01', color:'#84cc16'},
-  {key:'dose',     label:'AFR Dose',    unit:'ml/day', step:'0.1',  color:'#fb7185'},
+  {key:'ammonia',   label:'Ammonia',   unit:'ppm',    step:'0.01', color:'#84cc16'},
+  {key:'magnesium', label:'Magnesium', unit:'ppm',    step:'1',    color:'#14b8a6'},
+  {key:'dose',      label:'AFR Dose',  unit:'ml/day', step:'0.1',  color:'#fb7185'},
 ];
 
-const DATA_ARRAY_KEY = {temp:'temp',ph:'ph',salinity:'salinity',alk:'alk',calcium:'calcium',phosphate:'phosphate',nitrate:'nitrate',ammonia:'ammonia',dose:'dose'};
-const DATA_VAL_KEY   = {temp:'Temp',ph:'pH',salinity:'Salinity',alk:'ALK',calcium:'Calcium',phosphate:'Phosphate',nitrate:'Nitrate',ammonia:'Ammonia',dose:'dose'};
+const DATA_ARRAY_KEY = {temp:'temp',ph:'ph',salinity:'salinity',alk:'alk',calcium:'calcium',phosphate:'phosphate',nitrate:'nitrate',ammonia:'ammonia',magnesium:'magnesium',dose:'dose'};
+const DATA_VAL_KEY   = {temp:'Temp',ph:'pH',salinity:'Salinity',alk:'ALK',calcium:'Calcium',phosphate:'Phosphate',nitrate:'Nitrate',ammonia:'Ammonia',magnesium:'Magnesium',dose:'dose'};
 
 function loadLogTestValues(date) {
   if (!date) return;

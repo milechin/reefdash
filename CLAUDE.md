@@ -61,6 +61,7 @@ const CHART_DEFS = [
   {key:'Calcium',   label:'CALCIUM ppm',     color:'#f39c12', tMin:435,   tMax:465,   showDose:true},
   {key:'Phosphate', label:'PHOSPHATE ppm',   color:'#ec4899', tMin:0,     tMax:0.03,  showDose:false},
   {key:'Nitrate',   label:'NITRATE ppm',     color:'#06b6d4', tMin:0,     tMax:5,     showDose:false},
+  {key:'Magnesium', label:'MAGNESIUM ppm',   color:'#14b8a6', tMin:1250,  tMax:1350,  showDose:false},
 ];
 ```
 
