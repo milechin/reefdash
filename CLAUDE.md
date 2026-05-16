@@ -18,16 +18,18 @@ Open http://localhost:8080. No Node.js, no npm, no build step.
 **Deployment:** Copy all files to the Synology NAS web directory. The `.php` extension on `index.php` is required for the cache-busting `filemtime()` injection in `<head>`.
 
 ## Files
-- `index.php` — entire frontend (HTML + CSS + JS, ~85KB); PHP only used for cache-busting script tag and injecting `tanks.json`/`targets.json` at page load
-- `tank_data.js` — all tank data as `const RAW = {...}`
-- `save.php` — POST endpoint; validates content starts with `const RAW`, writes `tank_data.js`
-- `save_targets.php` — POST endpoint; writes raw JSON body to `targets.json`
-- `save_equipment.php` — POST endpoint; writes raw JSON body to `equipment.json`
-- `config/tanks.json` — tank definitions: `[{key, label, emoji}]`; drives tabs and panels
-- `config/targets.json` — persisted min/max target values per parameter
-- `config/equipment.json` — per-tank equipment: `[{tank, item, purchased, expires, comment}]`
+- `index.php` — entire frontend (HTML + CSS + JS, ~85KB); PHP only used for cache-busting script tag and injecting `config/tanks.json`/`config/targets.json` at page load
+- `data/tank_data.js` — all tank data as `const RAW = {...}` (gitignored)
+- `save.php` — POST endpoint; validates content starts with `const RAW`, writes `data/tank_data.js`
+- `save_targets.php` — POST endpoint; writes raw JSON body to `config/targets.json`
+- `save_equipment.php` — POST endpoint; writes raw JSON body to `config/equipment.json`
+- `config/tanks.json` — tank definitions: `[{key, label, emoji}]`; drives tabs and panels (gitignored)
+- `config/targets.json` — persisted min/max target values per parameter (gitignored)
+- `config/equipment.json` — per-tank equipment: `[{tank, item, purchased, expires, comment}]` (gitignored)
+- `scripts/migrate.py` — schema migration tool; run from project root: `python3 scripts/migrate.py`
+- `scripts/deploy.sh` — rsync deploy to dev/prod NAS (gitignored)
 - `Fish Tank Log - Display.csv` — source for bulk nitrate import (gitignored)
-- `templates/` — reference templates for all gitignored data files (`tank_data.template.js`, `tanks.template.json`, `targets.template.json`, `equipment.template.json`); not deployed
+- `templates/` — reference templates for all gitignored data files; not deployed
 
 ## Data Architecture
 `RAW` is a single JS object (the entire `tank_data.js` file):

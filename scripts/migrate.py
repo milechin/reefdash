@@ -3,15 +3,15 @@
 Migration script for tank_data.js.
 
 Usage:
-    python3 migrate.py                        # migrates tank_data.js in current directory
-    python3 migrate.py /path/to/tank_data.js  # migrates a specific file
+    python3 scripts/migrate.py                        # migrates data/tank_data.js
+    python3 scripts/migrate.py /path/to/tank_data.js  # migrates a specific file
 
 When adding a new schema version:
     1. Write a migrate_vN_to_vN1() function below
     2. Register it in MIGRATIONS with the target version as the key
     3. Update CURRENT_VERSION
-    4. Update tank_data.template.js to reflect the new structure
-    5. Bump SCHEMA_VERSION in tank_data.template.js
+    4. Update templates/tank_data.template.js to reflect the new structure
+    5. Bump SCHEMA_VERSION in templates/tank_data.template.js
 """
 
 import json
@@ -81,7 +81,8 @@ def backup(path):
 # ---------------------------------------------------------------------------
 
 def main():
-    path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path('tank_data.js')
+    default = Path(__file__).parent.parent / 'data' / 'tank_data.js'
+    path = Path(sys.argv[1]) if len(sys.argv) > 1 else default
 
     if not path.exists():
         print(f'ERROR: {path} not found.', file=sys.stderr)

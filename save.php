@@ -2,7 +2,6 @@
 /**
  * Reef Monitor — save endpoint
  * Receives updated tank_data.js content and writes it to disk.
- * Place this file in the same folder as tank_data.js.
  */
 
 header('Access-Control-Allow-Origin: *');
@@ -40,12 +39,11 @@ try {
         throw new Exception('Content does not look like tank_data.js');
     }
 
-    $dir      = __DIR__;
-    $filePath = $dir . '/tank_data.js';
+    $filePath = __DIR__ . '/data/tank_data.js';
 
-    // Check the directory is writable
-    if (!is_writable($dir)) {
-        throw new Exception('Directory not writable: ' . $dir);
+    // Check the data directory is writable
+    if (!is_writable(__DIR__ . '/data')) {
+        throw new Exception('Directory not writable: ' . __DIR__ . '/data');
     }
 
     // Write new file

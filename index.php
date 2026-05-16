@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <?php
-$v = file_exists('tank_data.js') ? filemtime('tank_data.js') : time();
+$v = file_exists('data/tank_data.js') ? filemtime('data/tank_data.js') : time();
 $isDev = str_contains($_SERVER['REQUEST_URI'] ?? '', 'reefdash-dev');
 $versionFile = __DIR__ . '/version.json';
 $versionInfo = file_exists($versionFile) ? (json_decode(file_get_contents($versionFile), true) ?: []) : [];
@@ -21,7 +21,7 @@ $tanks = file_exists($tanksFile) ? (json_decode(file_get_contents($tanksFile), t
 $equipFile = __DIR__ . '/config/equipment.json';
 $equipment = file_exists($equipFile) ? (json_decode(file_get_contents($equipFile), true) ?: []) : [];
 ?>
-<script src="tank_data.js?v=<?php echo $v; ?>"></script>
+<script src="data/tank_data.js?v=<?php echo $v; ?>"></script>
 <script>
 const SAVED_TARGETS = <?php echo json_encode($savedTargets); ?>;
 const TANK_CONFIGS  = <?php echo json_encode($tanks); ?>;
