@@ -1,3 +1,4 @@
 *backup*
 *.csv
 *.js
+!tank_data.template.js
