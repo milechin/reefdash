@@ -81,8 +81,11 @@ def backup(path):
 # ---------------------------------------------------------------------------
 
 def main():
+    args = [a for a in sys.argv[1:] if not a.startswith('--')]
+    check_only = '--check' in sys.argv
+
     default = Path(__file__).parent.parent / 'data' / 'tank_data.js'
-    path = Path(sys.argv[1]) if len(sys.argv) > 1 else default
+    path = Path(args[0]) if args else default
 
     if not path.exists():
         print(f'ERROR: {path} not found.', file=sys.stderr)
@@ -101,6 +104,10 @@ def main():
 
     if current > CURRENT_VERSION:
         print('ERROR: data is newer than this script. Update the script first.', file=sys.stderr)
+        sys.exit(1)
+
+    if check_only:
+        print(f'Migration required: v{current} → v{CURRENT_VERSION}')
         sys.exit(1)
 
     backup(path)
