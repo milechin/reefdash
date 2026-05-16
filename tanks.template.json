@@ -1,0 +1,12 @@
+[
+  {
+    "key":   "display",
+    "label": "Display Tank",
+    "emoji": "🐠"
+  },
+  {
+    "key":   "qrt",
+    "label": "Quarantine Tank",
+    "emoji": "🔬"
+  }
+]

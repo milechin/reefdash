@@ -1,0 +1,9 @@
+[
+  {
+    "tank":      "display",
+    "item":      "Equipment Name",
+    "purchased": "YYYY-MM-DD",
+    "expires":   "YYYY-MM-DD",
+    "comment":   ""
+  }
+]
