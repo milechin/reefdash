@@ -1,7 +1,6 @@
 *backup*
 *.csv
-*.js
-!tank_data.template.js
+tank_data.js
 equipment.json
 tanks.json
 targets.json
