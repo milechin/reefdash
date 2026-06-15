@@ -9,3 +9,4 @@ scripts/deploy.sh
 version.json
 config/reefdash.json
 config/parameters.json
+config/ui.json

@@ -1,0 +1,10 @@
+{
+  "presets": [
+    {"label": "90d", "days": 90, "default": true},
+    {"label": "6mo", "days": 180},
+    {"label": "1yr", "days": 365},
+    {"label": "All", "days": 0}
+  ],
+  "maintenance": {"recentDays": 7, "dueSoonDays": 14},
+  "equipment": {"expiryWarnDays": 180}
+}

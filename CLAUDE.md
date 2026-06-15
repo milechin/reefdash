@@ -26,6 +26,7 @@ Open http://localhost:8080. No Node.js, no npm, no build step.
 - `config/tanks.json` — tank definitions: `[{key, label, emoji}]`; drives tabs and panels (gitignored)
 - `config/targets.json` — persisted min/max target values per parameter (gitignored)
 - `config/equipment.json` — per-tank equipment: `[{tank, item, purchased, expires, comment}]` (gitignored)
+- `config/ui.json` — UI config injected as `UI_CONFIG`: date-range `presets`, `maintenance` recency thresholds, `equipment.expiryWarnDays` (gitignored; PHP head has fallback defaults)
 - `scripts/migrate.py` — schema migration tool; run from project root: `python3 scripts/migrate.py`
 - `scripts/deploy.sh` — rsync deploy to dev/prod NAS (gitignored)
 - `Fish Tank Log - Display.csv` — source for bulk nitrate import (gitignored)

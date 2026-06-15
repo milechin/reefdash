@@ -24,6 +24,18 @@ $equipFile   = __DIR__ . '/' . ($appConfig['equipment'] ?? 'config/equipment.jso
 $equipment = file_exists($equipFile) ? (json_decode(file_get_contents($equipFile), true) ?: []) : [];
 $parametersFile = __DIR__ . '/' . ($appConfig['parameters'] ?? 'config/parameters.json');
 $parametersData = file_exists($parametersFile) ? (json_decode(file_get_contents($parametersFile), true) ?: []) : [];
+$uiFile = __DIR__ . '/' . ($appConfig['ui'] ?? 'config/ui.json');
+$uiConfig = file_exists($uiFile) ? (json_decode(file_get_contents($uiFile), true) ?: []) : [];
+$uiConfig += [
+  'presets' => [
+    ['label'=>'90d','days'=>90,'default'=>true],
+    ['label'=>'6mo','days'=>180],
+    ['label'=>'1yr','days'=>365],
+    ['label'=>'All','days'=>0],
+  ],
+  'maintenance' => ['recentDays'=>7,'dueSoonDays'=>14],
+  'equipment'   => ['expiryWarnDays'=>180],
+];
 ?>
 <script src="<?php echo htmlspecialchars($tankDataPath); ?>?v=<?php echo $v; ?>"></script>
 <script>
@@ -31,6 +43,7 @@ const SAVED_TARGETS = <?php echo json_encode($savedTargets); ?>;
 const TANK_CONFIGS  = <?php echo json_encode($tanks); ?>;
 const EQUIPMENT_RAW = <?php echo json_encode($equipment); ?>;
 const PARAMETERS    = <?php echo json_encode($parametersData); ?>;
+const UI_CONFIG     = <?php echo json_encode($uiConfig); ?>;
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
@@ -427,10 +440,9 @@ tr:last-child td { border:none; }
       <label>TO</label>
       <input type="date" class="date-input" id="dateTo" onchange="onDateChange()">
       <div class="preset-btns">
-        <button class="preset-btn active" onclick="setPreset(90,this)">90d</button>
-        <button class="preset-btn" onclick="setPreset(180,this)">6mo</button>
-        <button class="preset-btn" onclick="setPreset(365,this)">1yr</button>
-        <button class="preset-btn" onclick="setPreset(0,this)">All</button>
+<?php foreach ($uiConfig['presets'] as $p): ?>
+        <button class="preset-btn<?php echo !empty($p['default']) ? ' active' : ''; ?>" onclick="setPreset(<?php echo (int)$p['days']; ?>,this)"><?php echo htmlspecialchars($p['label']); ?></button>
+<?php endforeach; ?>
       </div>
       <div style="width:1px;background:var(--border);height:22px;margin:0 6px"></div>
       <button class="wc-toggle" id="wcToggle" onclick="toggleWaterChanges()">
@@ -1046,6 +1058,10 @@ const DATA_KEY_MAP    = Object.fromEntries(PARAMETERS.filter(p=>p.hasChart).map(
 // Store defaults for reset (before applying saved targets)
 const CHART_DEFS_DEFAULTS = CHART_DEFS.map(cd => ({...cd}));
 
+// Default date-range preset (drives tab-switch reset + active button)
+const DEFAULT_PRESET_IDX  = Math.max(0, (UI_CONFIG.presets || []).findIndex(p => p.default));
+const DEFAULT_PRESET_DAYS = (UI_CONFIG.presets || [])[DEFAULT_PRESET_IDX]?.days ?? 90;
+
 // Apply persisted targets from targets.json
 Object.entries(SAVED_TARGETS).forEach(([key, t]) => {
   const cd = CHART_DEFS.find(c => c.key === key);
@@ -1593,6 +1609,15 @@ function statusOf(v,min,max) {
   if (v<min) return 'warn';
   return 'bad';
 }
+
+// Maintenance recency badge (water change / water test), thresholds from UI_CONFIG
+function maintBadge(days) {
+  if (days === null) return '';
+  const m = UI_CONFIG.maintenance;
+  if (days <= m.recentDays)  return `<span class="badge good"><span class="bd"></span>● Recent</span>`;
+  if (days <= m.dueSoonDays) return `<span class="badge warn"><span class="bd"></span>▲ Due Soon</span>`;
+  return `<span class="badge bad"><span class="bd"></span>▲ Overdue</span>`;
+}
 const statusText = {good:'● In Range', warn:'▼ Low', bad:'▲ High'};
 
 function buildTankPanel(panelId, tankKey) {
@@ -1611,10 +1636,7 @@ function buildTankPanel(panelId, tankKey) {
     const now  = new Date();
     daysSinceWc = Math.floor((now - then) / 86400000);
   }
-  const wcStatus = daysSinceWc === null ? '' :
-    daysSinceWc <= 7  ? `<span class="badge good"><span class="bd"></span>● Recent</span>` :
-    daysSinceWc <= 14 ? `<span class="badge warn"><span class="bd"></span>▲ Due Soon</span>` :
-                        `<span class="badge bad"><span class="bd"></span>▲ Overdue</span>`;
+  const wcStatus = maintBadge(daysSinceWc);
   const wcCard = `<div class="kpi" style="--kc:#60a5fa">
     <div class="kpi-lbl" style="display:flex;justify-content:space-between;align-items:center">
       <span>💧 LAST WATER CHANGE</span>
@@ -1638,10 +1660,7 @@ function buildTankPanel(panelId, tankKey) {
     const now  = new Date();
     daysSinceTest = Math.floor((now - then) / 86400000);
   }
-  const testStatus = daysSinceTest === null ? '' :
-    daysSinceTest <= 7  ? `<span class="badge good"><span class="bd"></span>● Recent</span>` :
-    daysSinceTest <= 14 ? `<span class="badge warn"><span class="bd"></span>▲ Due Soon</span>` :
-                          `<span class="badge bad"><span class="bd"></span>▲ Overdue</span>`;
+  const testStatus = maintBadge(daysSinceTest);
   const testCard = `<div class="kpi" style="--kc:#a78bfa">
     <div class="kpi-lbl">🔬 LAST WATER TEST</div>
     <div class="kpi-val" style="font-size:22px">${daysSinceTest !== null ? daysSinceTest : '—'}</div>
@@ -1759,7 +1778,7 @@ function equipRowHtml(e, showTank, idx) {
   if (e.comment==='Replaced')  { cls='gray'; txt='Replaced'; }
   else if (d===null)            { cls='gray'; txt='No expiry'; }
   else if (d<0)                 { cls='bad';  txt='Expired'; }
-  else if (d<180)               { cls='warn'; txt=`${d}d left`; }
+  else if (d<UI_CONFIG.equipment.expiryWarnDays) { cls='warn'; txt=`${d}d left`; }
   else                          { cls='good'; txt=`${d}d left`; }
   const tankCell = showTank ? `<td><span class="tbadge">${TANK_NAMES[e.tank]||e.tank}</span></td>` : '';
   const editCell = idx !== undefined
@@ -1872,15 +1891,15 @@ function switchTab(key, btn) {
   document.getElementById('panel-'+key).classList.add('active');
 
   if (TANK_TABS.has(key)) {
-    // Reset date range when switching between tanks — default to 90d
+    // Reset date range when switching between tanks — default preset from UI_CONFIG
     if (key !== currentTankKey) {
       currentTankKey = key;
       const range = getDateRange();
       dateTo   = range.max;
-      dateFrom = subtractDays(range.max, 90);
+      dateFrom = subtractDays(range.max, DEFAULT_PRESET_DAYS);
       document.getElementById('dateFrom').value = dateFrom;
       document.getElementById('dateTo').value   = dateTo;
-      document.querySelectorAll('.preset-btn').forEach((b,i)=>b.classList.toggle('active', i===0));
+      document.querySelectorAll('.preset-btn').forEach((b,i)=>b.classList.toggle('active', i===DEFAULT_PRESET_IDX));
     }
 
     updateWcToggleVisibility(key);

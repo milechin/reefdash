@@ -1,9 +1,10 @@
 {
-    "tankData":  "data/tank_data.js",
-    "tanks":     "config/tanks.json",
-    "targets":   "config/targets.json",
+    "tankData": "data/tank_data.js",
+    "tanks": "config/tanks.json",
+    "targets": "config/targets.json",
     "equipment": "config/equipment.json",
-    "version":   "version.json",
+    "version": "version.json",
     "devMarker": "reefdash-dev",
-    "parameters": "config/parameters.json"
+    "parameters": "config/parameters.json",
+    "ui": "config/ui.json"
 }
