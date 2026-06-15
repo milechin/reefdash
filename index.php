@@ -489,7 +489,7 @@ tr:last-child td { border:none; }
       <div id="logTestMsg" style="font-family:'Space Mono',monospace;font-size:11px;min-height:18px;margin-top:8px;"></div>
       <div class="modal-footer">
         <button class="btn-reset" onclick="closeLogTest()">Cancel</button>
-        <button class="btn-apply" onclick="submitLogTest()">Save Entry</button>
+        <button class="btn-apply" onclick="submitLogTest(this)">Save Entry</button>
       </div>
     </div>
   </div>
@@ -511,8 +511,8 @@ tr:last-child td { border:none; }
       <div id="logWCMsg" style="font-family:'Space Mono',monospace;font-size:11px;min-height:18px;margin-top:8px;"></div>
       <div class="modal-footer">
         <button class="btn-reset" onclick="closeLogWC()">Cancel</button>
-        <button id="logWCDeleteBtn" class="btn-reset" style="display:none;border-color:rgba(231,76,60,0.4);color:#e74c3c;" onclick="deleteLogWC()">🗑 Delete Entry</button>
-        <button class="btn-apply" style="background:rgba(59,130,246,0.15);border-color:#60a5fa;color:#93c5fd;" onclick="submitLogWC()">Save Water Change</button>
+        <button id="logWCDeleteBtn" class="btn-reset" style="display:none;border-color:rgba(231,76,60,0.4);color:#e74c3c;" onclick="deleteLogWC(this)">🗑 Delete Entry</button>
+        <button class="btn-apply" style="background:rgba(59,130,246,0.15);border-color:#60a5fa;color:#93c5fd;" onclick="submitLogWC(this)">Save Water Change</button>
       </div>
     </div>
   </div>
@@ -535,8 +535,8 @@ tr:last-child td { border:none; }
       <div id="blogMsg" style="font-family:'Space Mono',monospace;font-size:11px;min-height:18px;margin-top:8px;"></div>
       <div class="modal-footer">
         <button class="btn-reset" onclick="closeBlog()">Cancel</button>
-        <button id="blogDeleteBtn" class="btn-reset" style="display:none;border-color:rgba(231,76,60,0.4);color:#e74c3c;" onclick="deleteBlogEntry()">🗑 Delete</button>
-        <button class="btn-apply" style="background:rgba(167,139,250,0.15);border-color:#a78bfa;color:#c4b5fd;" onclick="submitBlog()">Save Entry</button>
+        <button id="blogDeleteBtn" class="btn-reset" style="display:none;border-color:rgba(231,76,60,0.4);color:#e74c3c;" onclick="deleteBlogEntry(this)">🗑 Delete</button>
+        <button class="btn-apply" style="background:rgba(167,139,250,0.15);border-color:#a78bfa;color:#c4b5fd;" onclick="submitBlog(this)">Save Entry</button>
       </div>
     </div>
   </div>
@@ -570,8 +570,8 @@ tr:last-child td { border:none; }
       <div id="equipMsg" style="font-family:'Space Mono',monospace;font-size:11px;min-height:18px;margin-top:8px;"></div>
       <div class="modal-footer">
         <button class="btn-reset" onclick="closeEquip()">Cancel</button>
-        <button id="equipDeleteBtn" class="btn-reset" style="display:none;border-color:rgba(231,76,60,0.4);color:#e74c3c;" onclick="deleteEquip()">🗑 Delete</button>
-        <button class="btn-apply" onclick="submitEquip()">Save</button>
+        <button id="equipDeleteBtn" class="btn-reset" style="display:none;border-color:rgba(231,76,60,0.4);color:#e74c3c;" onclick="deleteEquip(this)">🗑 Delete</button>
+        <button class="btn-apply" onclick="submitEquip(this)">Save</button>
       </div>
     </div>
   </div>
@@ -1218,7 +1218,7 @@ function closeLogTest() {
   document.getElementById('logTestModal').classList.remove('open');
 }
 
-function submitLogTest() {
+function submitLogTest(btn) {
   const date = document.getElementById('logTestDate').value;
   if (!date) {
     document.getElementById('logTestMsg').style.color = '#e74c3c';
@@ -1227,6 +1227,7 @@ function submitLogTest() {
   }
 
   const td = RAW[currentTankKey];
+  const snap = snapshotTank(td);   // for rollback if the save fails
   let saved = 0;
 
   LOG_TEST_FIELDS.forEach(f => {
@@ -1263,38 +1264,45 @@ function submitLogTest() {
     return;
   }
 
-  // Recompute date window so new entry is included, preserving the active preset
-  const activePreset = document.querySelector('.preset-btn.active');
-  const presetDays = activePreset ? parseInt(activePreset.textContent) || 0 : 0;
-  const range = getDateRange();
-  if (presetDays > 0) {
-    dateTo   = range.max;
-    dateFrom = subtractDays(range.max, presetDays);
-    document.getElementById('dateFrom').value = dateFrom;
-    document.getElementById('dateTo').value   = dateTo;
-  } else {
-    // "All" preset — clear filters
-    dateFrom = null; dateTo = null;
-    document.getElementById('dateFrom').value = '';
-    document.getElementById('dateTo').value   = '';
-  }
+  // Commit the UI to the new data — runs only once the save is confirmed (or download fallback)
+  const commit = () => {
+    // Recompute date window so new entry is included, preserving the active preset
+    const activePreset = document.querySelector('.preset-btn.active');
+    const presetDays = activePreset ? parseInt(activePreset.textContent) || 0 : 0;
+    const range = getDateRange();
+    if (presetDays > 0) {
+      dateTo   = range.max;
+      dateFrom = subtractDays(range.max, presetDays);
+      document.getElementById('dateFrom').value = dateFrom;
+      document.getElementById('dateTo').value   = dateTo;
+    } else {
+      // "All" preset — clear filters
+      dateFrom = null; dateTo = null;
+      document.getElementById('dateFrom').value = '';
+      document.getElementById('dateTo').value   = '';
+    }
+    // Rebuild the current panel to reflect new data
+    initialized[currentTankKey] = false;
+    buildTankPanel(currentTankKey, currentTankKey);
+    initialized[currentTankKey] = true;
+  };
 
-  // Rebuild the current panel to reflect new data
-  initialized[currentTankKey] = false;
-  buildTankPanel(currentTankKey, currentTankKey);
-  initialized[currentTankKey] = true;
-
-  // Generate updated tank_data.js content
+  // Generate updated tank_data.js content (RAW is mutated; committed/rolled back below)
   const jsContent = 'const RAW = ' + JSON.stringify(RAW, null, 2) + ';\n';
 
-  // Try to POST to local server endpoint first (works when running via server.js)
+  // Persist first; only touch the UI / close the modal once the write is confirmed.
+  setSaving(btn, true);
   saveData(jsContent,
-    () => closeLogTest(),
+    () => { setSaving(btn, false); commit(); closeLogTest(); },
     (errMsg) => {
+      restoreTank(td, snap);   // undo the in-memory change so it can't be silently lost
+      setSaving(btn, false);
       document.getElementById('logTestMsg').style.color = '#e74c3c';
       document.getElementById('logTestMsg').textContent = '✗ Server error: ' + errMsg;
     },
     (jsContent) => {
+      setSaving(btn, false);
+      commit();
       document.getElementById('logTestMsg').style.color = '#f39c12';
       document.getElementById('logTestMsg').textContent =
         `✓ Saved ${saved} value${saved>1?'s':''} for ${date}. No server detected — download to persist:`;
@@ -1354,7 +1362,7 @@ function closeLogWC() {
   document.getElementById('logWCModal').classList.remove('open');
 }
 
-function submitLogWC() {
+function submitLogWC(btn) {
   const date = document.getElementById('logWCDate').value;
   if (!date) {
     document.getElementById('logWCMsg').style.color = '#e74c3c';
@@ -1362,6 +1370,8 @@ function submitLogWC() {
     return;
   }
 
+  const td = RAW[currentTankKey];
+  const snap = snapshotTank(td);   // for rollback if the save fails
   const wc = WATER_CHANGES[currentTankKey];
   if (!wc.includes(date)) {
     const idx = wc.findIndex(d => d > date);
@@ -1369,20 +1379,27 @@ function submitLogWC() {
     else wc.splice(idx, 0, date);
   }
 
-  // Rebuild panel once to refresh KPI card and charts
-  initialized[currentTankKey] = false;
-  buildTankPanel(currentTankKey, currentTankKey);
-  initialized[currentTankKey] = true;
+  const commit = () => {
+    // Rebuild panel once to refresh KPI card and charts
+    initialized[currentTankKey] = false;
+    buildTankPanel(currentTankKey, currentTankKey);
+    initialized[currentTankKey] = true;
+  };
 
   const jsContent = 'const RAW = ' + JSON.stringify(RAW, null, 2) + ';\n';
 
+  setSaving(btn, true);
   saveData(jsContent,
-    () => closeLogWC(),
+    () => { setSaving(btn, false); commit(); closeLogWC(); },
     (errMsg) => {
+      restoreTank(td, snap);
+      setSaving(btn, false);
       document.getElementById('logWCMsg').style.color = '#e74c3c';
       document.getElementById('logWCMsg').textContent = '✗ Server error: ' + errMsg;
     },
     (jsContent) => {
+      setSaving(btn, false);
+      commit();
       document.getElementById('logWCMsg').style.color = '#f39c12';
       document.getElementById('logWCMsg').textContent = `✓ Water change on ${date} logged. No server detected — download to persist:`;
       const a = document.createElement('a');
@@ -1397,28 +1414,37 @@ function submitLogWC() {
   );
 }
 
-function deleteLogWC() {
+function deleteLogWC(btn) {
   const date = document.getElementById('logWCDate').value;
   if (!date) return;
 
+  const td = RAW[currentTankKey];
+  const snap = snapshotTank(td);   // for rollback if the save fails
   const wc = WATER_CHANGES[currentTankKey];
   const idx = wc.indexOf(date);
   if (idx === -1) return;
   wc.splice(idx, 1);
 
-  initialized[currentTankKey] = false;
-  buildTankPanel(currentTankKey, currentTankKey);
-  initialized[currentTankKey] = true;
+  const commit = () => {
+    initialized[currentTankKey] = false;
+    buildTankPanel(currentTankKey, currentTankKey);
+    initialized[currentTankKey] = true;
+  };
 
   const jsContent = 'const RAW = ' + JSON.stringify(RAW, null, 2) + ';\n';
 
+  setSaving(btn, true);
   saveData(jsContent,
-    () => closeLogWC(),
+    () => { setSaving(btn, false); commit(); closeLogWC(); },
     (errMsg) => {
+      restoreTank(td, snap);
+      setSaving(btn, false);
       document.getElementById('logWCMsg').style.color = '#e74c3c';
       document.getElementById('logWCMsg').textContent = '✗ Server error: ' + errMsg;
     },
     (jsContent) => {
+      setSaving(btn, false);
+      commit();
       document.getElementById('logWCMsg').style.color = '#f39c12';
       document.getElementById('logWCMsg').textContent = `✓ Water change on ${date} deleted. No server detected — download to persist:`;
       const a = document.createElement('a');
@@ -1486,7 +1512,7 @@ function closeBlog() {
   if (_blogFlatpickr) { _blogFlatpickr.destroy(); _blogFlatpickr = null; }
 }
 
-function submitBlog() {
+function submitBlog(btn) {
   const date = document.getElementById('blogDate').value;
   const text = document.getElementById('blogText').value.trim();
   if (!date) {
@@ -1501,6 +1527,7 @@ function submitBlog() {
   }
 
   const td = RAW[currentTankKey];
+  const snap = snapshotTank(td);   // for rollback if the save fails
   if (!td.blog) td.blog = [];
   const idx = td.blog.findIndex(e => e.date === date);
   if (idx !== -1) {
@@ -1510,18 +1537,25 @@ function submitBlog() {
     td.blog.sort((a,b) => a.date.localeCompare(b.date));
   }
 
-  initialized[currentTankKey] = false;
-  buildTankPanel(currentTankKey, currentTankKey);
-  initialized[currentTankKey] = true;
+  const commit = () => {
+    initialized[currentTankKey] = false;
+    buildTankPanel(currentTankKey, currentTankKey);
+    initialized[currentTankKey] = true;
+  };
 
   const jsContent = 'const RAW = ' + JSON.stringify(RAW, null, 2) + ';\n';
+  setSaving(btn, true);
   saveData(jsContent,
-    () => closeBlog(),
+    () => { setSaving(btn, false); commit(); closeBlog(); },
     (errMsg) => {
+      restoreTank(td, snap);
+      setSaving(btn, false);
       document.getElementById('blogMsg').style.color = '#e74c3c';
       document.getElementById('blogMsg').textContent = '✗ Server error: ' + errMsg;
     },
     (jsContent) => {
+      setSaving(btn, false);
+      commit();
       document.getElementById('blogMsg').style.color = '#f39c12';
       document.getElementById('blogMsg').textContent = `✓ Entry saved. No server detected — download to persist:`;
       const a = document.createElement('a');
@@ -1536,26 +1570,34 @@ function submitBlog() {
   );
 }
 
-function deleteBlogEntry() {
+function deleteBlogEntry(btn) {
   const date = document.getElementById('blogDate').value;
   if (!date) return;
   const td = RAW[currentTankKey];
   const idx = (td.blog || []).findIndex(e => e.date === date);
   if (idx === -1) return;
+  const snap = snapshotTank(td);   // for rollback if the save fails
   td.blog.splice(idx, 1);
 
-  initialized[currentTankKey] = false;
-  buildTankPanel(currentTankKey, currentTankKey);
-  initialized[currentTankKey] = true;
+  const commit = () => {
+    initialized[currentTankKey] = false;
+    buildTankPanel(currentTankKey, currentTankKey);
+    initialized[currentTankKey] = true;
+  };
 
   const jsContent = 'const RAW = ' + JSON.stringify(RAW, null, 2) + ';\n';
+  setSaving(btn, true);
   saveData(jsContent,
-    () => closeBlog(),
+    () => { setSaving(btn, false); commit(); closeBlog(); },
     (errMsg) => {
+      restoreTank(td, snap);
+      setSaving(btn, false);
       document.getElementById('blogMsg').style.color = '#e74c3c';
       document.getElementById('blogMsg').textContent = '✗ Server error: ' + errMsg;
     },
     (jsContent) => {
+      setSaving(btn, false);
+      commit();
       document.getElementById('blogMsg').style.color = '#f39c12';
       document.getElementById('blogMsg').textContent = `✓ Entry deleted. No server detected — download to persist:`;
       const a = document.createElement('a');
@@ -1568,6 +1610,23 @@ function deleteBlogEntry() {
       msg.appendChild(a);
     }
   );
+}
+
+// ── SAVE-FLOW HELPERS
+// Disable a Save/Delete button and show a transient label while a save is in flight.
+function setSaving(btn, on) {
+  if (!btn) return;
+  if (on)  { btn.dataset.label = btn.textContent; btn.disabled = true; btn.textContent = 'Saving…'; }
+  else     { btn.disabled = false; if (btn.dataset.label) btn.textContent = btn.dataset.label; }
+}
+// Deep snapshot / in-place restore of a tank object. In-place array restore preserves the
+// WATER_CHANGES / DOSE_DATA references that alias into RAW tank arrays.
+function snapshotTank(td) { return JSON.parse(JSON.stringify(td)); }
+function restoreTank(td, snap) {
+  for (const k in snap) {
+    if (Array.isArray(snap[k])) { td[k].length = 0; td[k].push(...snap[k]); }
+    else td[k] = snap[k];
+  }
 }
 
 // ── SHARED SAVE HELPER
@@ -1823,7 +1882,8 @@ function closeEquip() {
   document.getElementById('equipModal').classList.remove('open');
 }
 
-function saveEquipAndRebuild(onSuccess) {
+function saveEquipAndRebuild(onSuccess, onFail, btn) {
+  setSaving(btn, true);
   fetch('save_equipment.php', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -1831,14 +1891,18 @@ function saveEquipAndRebuild(onSuccess) {
   })
   .then(r => r.json())
   .then(res => {
+    setSaving(btn, false);
     if (res.ok) {
       onSuccess();
     } else {
+      if (onFail) onFail();   // roll back the in-memory change so it can't be silently lost
       document.getElementById('equipMsg').style.color = '#e74c3c';
       document.getElementById('equipMsg').textContent = '✗ Server error: ' + res.error;
     }
   })
   .catch(() => {
+    setSaving(btn, false);
+    if (onFail) onFail();
     document.getElementById('equipMsg').style.color = '#f39c12';
     document.getElementById('equipMsg').textContent = '✗ Could not reach server.';
   });
@@ -1850,7 +1914,7 @@ function rebuildEquipViews() {
   initialized[currentTankKey] = true;
 }
 
-function submitEquip() {
+function submitEquip(btn) {
   const item = document.getElementById('equipItem').value.trim();
   if (!item) {
     document.getElementById('equipMsg').style.color = '#e74c3c';
@@ -1865,19 +1929,29 @@ function submitEquip() {
     comment:   document.getElementById('equipComment').value.trim(),
   };
 
+  const snap = EQUIPMENT_RAW.map(e => ({...e}));   // for rollback if the save fails
   if (_equipEditIdx !== null) {
     EQUIPMENT_RAW[_equipEditIdx] = entry;
   } else {
     EQUIPMENT_RAW.push(entry);
   }
 
-  saveEquipAndRebuild(() => { rebuildEquipViews(); closeEquip(); });
+  saveEquipAndRebuild(
+    () => { rebuildEquipViews(); closeEquip(); },
+    () => { EQUIPMENT_RAW.length = 0; EQUIPMENT_RAW.push(...snap); },
+    btn
+  );
 }
 
-function deleteEquip() {
+function deleteEquip(btn) {
   if (_equipEditIdx === null) return;
+  const snap = EQUIPMENT_RAW.map(e => ({...e}));   // for rollback if the save fails
   EQUIPMENT_RAW.splice(_equipEditIdx, 1);
-  saveEquipAndRebuild(() => { rebuildEquipViews(); closeEquip(); });
+  saveEquipAndRebuild(
+    () => { rebuildEquipViews(); closeEquip(); },
+    () => { EQUIPMENT_RAW.length = 0; EQUIPMENT_RAW.push(...snap); },
+    btn
+  );
 }
 
 // ── TAB SWITCHING
