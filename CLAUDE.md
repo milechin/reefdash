@@ -38,16 +38,15 @@ Open http://localhost:8080. No Node.js, no npm, no build step.
   - `latest` — `{temp, ph, salinity, nitrate, ammonia, alk, calcium, phosphate, lastDate}`
   - parameter arrays — `{date, Value}` objects (except `nitrate`: `{date, Nitrate}`)
   - `waterChanges` — `["YYYY-MM-DD", ...]`
-  - `dose` — `[{date, dose}]` for AFR Dose ml/day
   - `blog` — `[{date, text}]` for daily log entries
 - `equipment`, `log` — legacy top-level arrays; unused (equipment → equipment.json, log → per-tank blog)
 
-`WATER_CHANGES` and `DOSE_DATA` are reference objects pointing into RAW tank arrays — mutations are reflected in both.
+`WATER_CHANGES` is a reference object pointing into RAW tank `waterChanges` arrays — mutations are reflected in both.
 
 ## Dashboard Layout (per tank panel)
 1. Maintenance section — Last Water Change + Last Water Test cards
 2. Current Parameters — 8 KPI cards with `+ Log Test` button
-3. Controls bar (`dateBar`) — date pickers, presets (90d default), Water Changes toggle, Dose toggle, ⚙ Targets
+3. Controls bar (`dateBar`) — date pickers, presets (90d default), Water Changes toggle, ⚙ Targets
 4. Parameter Trends — 7 Chart.js charts on a shared x-axis
 5. Daily Log — blog entries with `+ Add Entry`
 6. Equipment — per-tank table with `+ Add` / `✎ Edit`
@@ -58,25 +57,25 @@ Tabs are driven by `tanks.json` (PHP-injected). Only fixed tab is **Help**.
 The single source of truth for chart rendering. Adding a chart only requires one entry:
 ```js
 const CHART_DEFS = [
-  {key:'Temp',      label:'TEMPERATURE °F',  color:'#00d4ff', tMin:76,    tMax:80,    showDose:false},
-  {key:'pH',        label:'pH',              color:'#a78bfa', tMin:8.1,   tMax:8.5,   showDose:true},
-  {key:'Salinity',  label:'SALINITY',        color:'#2ecc71', tMin:1.025, tMax:1.027, showDose:false},
-  {key:'ALK',       label:'ALKALINITY dKH',  color:'#ffd166', tMin:11,    tMax:12,    showDose:true},
-  {key:'Calcium',   label:'CALCIUM ppm',     color:'#f39c12', tMin:435,   tMax:465,   showDose:true},
-  {key:'Phosphate', label:'PHOSPHATE ppm',   color:'#ec4899', tMin:0,     tMax:0.03,  showDose:false},
-  {key:'Nitrate',   label:'NITRATE ppm',     color:'#06b6d4', tMin:0,     tMax:5,     showDose:false},
-  {key:'Magnesium', label:'MAGNESIUM ppm',   color:'#14b8a6', tMin:1250,  tMax:1350,  showDose:false},
+  {key:'Temp',      label:'TEMPERATURE °F',  color:'#00d4ff', tMin:76,    tMax:80},
+  {key:'pH',        label:'pH',              color:'#a78bfa', tMin:8.1,   tMax:8.5},
+  {key:'Salinity',  label:'SALINITY',        color:'#2ecc71', tMin:1.025, tMax:1.027},
+  {key:'ALK',       label:'ALKALINITY dKH',  color:'#ffd166', tMin:11,    tMax:12},
+  {key:'Calcium',   label:'CALCIUM ppm',     color:'#f39c12', tMin:435,   tMax:465},
+  {key:'Phosphate', label:'PHOSPHATE ppm',   color:'#ec4899', tMin:0,     tMax:0.03},
+  {key:'Nitrate',   label:'NITRATE ppm',     color:'#06b6d4', tMin:0,     tMax:5},
+  {key:'Magnesium', label:'MAGNESIUM ppm',   color:'#14b8a6', tMin:1250,  tMax:1350},
 ];
 ```
 
 ## LOG_TEST_FIELDS / DATA_ARRAY_KEY / DATA_VAL_KEY
 These three objects must stay in sync when adding a new loggable parameter:
 - `LOG_TEST_FIELDS` — form inputs (key, label, unit, step, color)
-- `DATA_ARRAY_KEY` — form key → RAW array name (e.g. `dose:'dose'`)
-- `DATA_VAL_KEY` — form key → value property name per entry (e.g. `dose:'dose'`)
+- `DATA_ARRAY_KEY` — form key → RAW array name (e.g. `nitrate:'nitrate'`)
+- `DATA_VAL_KEY` — form key → value property name per entry (e.g. `nitrate:'Nitrate'`)
 
 ## Modals
-**Log Water Test** — Flatpickr with cyan dots on existing test days; selecting a date loads existing values for editing; 8 parameters + AFR Dose (blank = skip); inserts sorted, updates `latest` if newest.
+**Log Water Test** — Flatpickr with cyan dots on existing test days; selecting a date loads existing values for editing; 8 parameters (blank = skip); inserts sorted, updates `latest` if newest.
 
 **Log Water Change** — Flatpickr with blue dots; selecting an existing date shows `🗑 Delete Entry`.
 

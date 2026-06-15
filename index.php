@@ -290,7 +290,6 @@ tr:last-child td { border:none; }
 }
 .wc-toggle:hover { background:rgba(59,130,246,0.1); border-color:#60a5fa; }
 .wc-toggle.active { background:rgba(59,130,246,0.18); border-color:#60a5fa; color:#93c5fd; }
-#doseToggle.active { background:rgba(251,113,133,0.15); border-color:#fb7185; color:#fda4af; }
 .wc-toggle.hidden-mode { opacity:0.4; pointer-events:none; }
 .wc-dot { width:7px; height:7px; border-radius:50%; background:#60a5fa; box-shadow:0 0 5px #60a5fa; }
 
@@ -447,9 +446,6 @@ tr:last-child td { border:none; }
       <div style="width:1px;background:var(--border);height:22px;margin:0 6px"></div>
       <button class="wc-toggle" id="wcToggle" onclick="toggleWaterChanges()">
         <span class="wc-dot"></span>Water Changes
-      </button>
-      <button class="wc-toggle" id="doseToggle" onclick="toggleDose()" style="border-color:rgba(251,113,133,0.35);color:#fb7185;">
-        <span class="wc-dot" style="background:#fb7185;box-shadow:0 0 5px #fb7185"></span>All For Reef Dose
       </button>
       <div style="width:1px;background:var(--border);height:22px;margin:0 2px"></div>
       <button class="gear-btn" onclick="openTargetEditor()" title="Edit target ranges">⚙ Targets</button>
@@ -623,15 +619,9 @@ tr:last-child td { border:none; }
       </div>
 
       <div class="help-card">
-        <div class="help-card-icon">🩷</div>
-        <h3>All For Reef Dose</h3>
-        <p>Toggle <strong>All For Reef Dose</strong> to add a coral-coloured stepped line to the <strong>pH</strong>, <strong>Alkalinity</strong>, and <strong>Calcium</strong> charts with its own right-hand axis in ml/day. The line holds flat at the last recorded dose until a new value is logged. Dose is logged via <strong>+ Log Test</strong> in the Current Parameters bar.</p>
-      </div>
-
-      <div class="help-card">
         <div class="help-card-icon">🔬</div>
         <h3>Logging a Water Test</h3>
-        <p>Click <strong>+ Log Test</strong> in the Current Parameters bar. Select a date — <strong>cyan dots</strong> on the calendar indicate days with existing entries, which are loaded automatically for editing. Leave any field blank to skip it. Includes fields for all 8 parameters plus <strong>AFR Dose</strong>. On save the charts refresh immediately.</p>
+        <p>Click <strong>+ Log Test</strong> in the Current Parameters bar. Select a date — <strong>cyan dots</strong> on the calendar indicate days with existing entries, which are loaded automatically for editing. Leave any field blank to skip it. Includes fields for all 8 parameters. On save the charts refresh immediately.</p>
       </div>
 
       <div class="help-card">
@@ -727,7 +717,7 @@ function filterByDate(data) {
 }
 
 const charts = {};
-function makeChart(id, data, valueKey, color, tMin, tMax, canShowDose, masterLabels) {
+function makeChart(id, data, valueKey, color, tMin, tMax, masterLabels) {
   if (charts[id]) { try { charts[id].destroy(); } catch(e) {} delete charts[id]; }
   const ctx = document.getElementById(id);
   if (!ctx) return;
@@ -738,10 +728,6 @@ function makeChart(id, data, valueKey, color, tMin, tMax, canShowDose, masterLab
   // Apply date filter to actual data
   const filtered = filterByDate(data);
 
-  // Dose data (only for eligible charts when toggle is on)
-  const doseActive = canShowDose && showDose;
-  const doseFiltered = doseActive ? filterByDate(DOSE_DATA[currentTankKey] || []) : [];
-
   // Use the shared master label array (same x-axis for every chart on this tab)
   // Fall back to building locally if not provided (e.g. initial buildTankPanel call)
   const allDates = masterLabels || (() => {
@@ -750,8 +736,7 @@ function makeChart(id, data, valueKey, color, tMin, tMax, canShowDose, masterLab
     ).map(d => d.date) : [];
     return [...new Set([
       ...filtered.map(d => d.date),
-      ...wcDates,
-      ...doseFiltered.map(d => d.date)
+      ...wcDates
     ])].sort();
   })();
 
@@ -767,16 +752,6 @@ function makeChart(id, data, valueKey, color, tMin, tMax, canShowDose, masterLab
   const pointRadii     = allDates.map(d => dataMap[d] !== undefined ? dotSize : 0);
   const pointHoverRadii = allDates.map(d => dataMap[d] !== undefined ? 5 : 0);
 
-  const doseMap = {};
-  doseFiltered.forEach(d => { doseMap[d.date] = d.dose; });
-  // Forward-fill dose values; track which dates are actual entries for point display
-  let lastDose = null;
-  const doseValues = allDates.map(d => {
-    if (doseMap[d] !== undefined) lastDose = doseMap[d];
-    return lastDose;
-  });
-  // Point radius array: 3 on entry dates, 0 on forward-filled dates
-
   // Datasets
   const datasets = [{
     label: valueKey,
@@ -791,23 +766,6 @@ function makeChart(id, data, valueKey, color, tMin, tMax, canShowDose, masterLab
     spanGaps: true,
     yAxisID: 'y',
   }];
-
-  if (doseActive) {
-    datasets.push({
-      label: 'Dose (ml/day)',
-      data: doseValues,
-      borderColor: 'rgba(251,113,133,0.9)',
-      backgroundColor: 'transparent',
-      fill: false,
-      borderWidth: 1.5,
-      pointRadius: 0,
-      pointHoverRadius: 0,
-      pointBackgroundColor: 'rgba(251,113,133,1)',
-      stepped: 'before',
-      tension: 0,
-      yAxisID: 'yDose',
-    });
-  }
 
   // Build annotations
   const annotations = {};
@@ -864,20 +822,6 @@ function makeChart(id, data, valueKey, color, tMin, tMax, canShowDose, masterLab
       grace: '25%',
     },
   };
-  if (doseActive) {
-    scales.yDose = {
-      position: 'right',
-      grid: { drawOnChartArea: false },
-      ticks: {
-        font: {family:'Space Mono', size:8},
-        color: 'rgba(251,191,36,0.75)',
-        callback: v => v + ' ml'
-      },
-      title: {
-        display: false,
-      }
-    };
-  }
   // Hidden scale for blog dot y-position (fixed at bottom)
   scales.yBlog = { display: false, min: 0, max: 10, offset: false };
 
@@ -924,11 +868,7 @@ function makeChart(id, data, valueKey, color, tMin, tMax, canShowDose, masterLab
         chart.canvas.style.cursor = nearDot ? 'pointer' : '';
       },
       plugins:{
-        legend:{display: doseActive, labels:{
-          color:'#5a8aaa', font:{family:'Space Mono',size:8},
-          boxWidth:10, padding:8,
-          filter: item => item.datasetIndex === 1, // only show dose label
-        }},
+        legend:{display: false},
         tooltip:{
           backgroundColor:'#0a1a30',borderColor:'rgba(0,212,255,0.2)',borderWidth:1,
           titleFont:{family:'Space Mono',size:10},bodyFont:{family:'DM Sans'},
@@ -954,11 +894,6 @@ function buildMasterLabels(tankKey) {
     (WATER_CHANGES[tankKey] || []).forEach(d => dates.push(d));
   }
 
-  // Add dose dates if toggle is on
-  if (showDose) {
-    (DOSE_DATA[tankKey] || []).forEach(d => dates.push(d.date));
-  }
-
   // Always include blog entry dates
   (RAW[tankKey].blog || []).forEach(e => dates.push(e.date));
 
@@ -978,7 +913,7 @@ function refreshAllCharts(panelId, tankKey) {
   CHART_DEFS.forEach(cd=>{
     const dataKey = DATA_KEY_MAP[cd.key];
     const data = (td[dataKey] || []).filter(d=>d[cd.key]!==null && d[cd.key]!==undefined);
-    makeChart(`chart-${panelId}-${dataKey}`, data, cd.key, cd.color, cd.tMin, cd.tMax, cd.showDose, masterLabels);
+    makeChart(`chart-${panelId}-${dataKey}`, data, cd.key, cd.color, cd.tMin, cd.tMax, masterLabels);
   });
 }
 
@@ -1027,30 +962,8 @@ function initDateInputs(tankKey) {
   }
 }
 
-// ── ALL FOR REEF DOSAGE DATA (live references into RAW so save.php persists entries)
-const DOSE_DATA = {
-  display: RAW.display.dose,
-  qrt:     RAW.qrt.dose,
-  laurens: RAW.laurens.dose
-};
-
-let showDose = false;
-
-function toggleDose() {
-  showDose = !showDose;
-  const btn = document.getElementById('doseToggle');
-  btn.classList.toggle('active', showDose);
-  refreshAllCharts(currentTankKey, currentTankKey);
-}
-
-function updateDoseToggleVisibility(tankKey) {
-  const btn = document.getElementById('doseToggle');
-  const hasData = (DOSE_DATA[tankKey] || []).length > 0;
-  btn.classList.toggle('hidden-mode', !hasData);
-}
-
 const KPI_DEFS        = PARAMETERS.filter(p=>p.hasKpi).map(p=>({key:p.key, label:p.label, unit:p.unit, dec:p.dec, min:p.tMin, max:p.tMax, color:p.color, icon:p.icon}));
-const CHART_DEFS      = PARAMETERS.filter(p=>p.hasChart).map(p=>({key:p.valKey, label:p.chartLabel, color:p.color, tMin:p.tMin, tMax:p.tMax, showDose:p.showDose}));
+const CHART_DEFS      = PARAMETERS.filter(p=>p.hasChart).map(p=>({key:p.valKey, label:p.chartLabel, color:p.color, tMin:p.tMin, tMax:p.tMax}));
 const LOG_TEST_FIELDS = PARAMETERS.map(p=>({key:p.key, label:p.label, unit:p.unit, step:p.step, color:p.color}));
 const DATA_VAL_KEY    = Object.fromEntries(PARAMETERS.map(p=>[p.key, p.valKey]));
 const DATA_KEY_MAP    = Object.fromEntries(PARAMETERS.filter(p=>p.hasChart).map(p=>[p.valKey, p.key]));
@@ -1620,7 +1533,7 @@ function setSaving(btn, on) {
   else     { btn.disabled = false; if (btn.dataset.label) btn.textContent = btn.dataset.label; }
 }
 // Deep snapshot / in-place restore of a tank object. In-place array restore preserves the
-// WATER_CHANGES / DOSE_DATA references that alias into RAW tank arrays.
+// WATER_CHANGES references that alias into RAW tank arrays.
 function snapshotTank(td) { return JSON.parse(JSON.stringify(td)); }
 function restoreTank(td, snap) {
   for (const k in snap) {
@@ -1819,7 +1732,7 @@ function buildTankPanel(panelId, tankKey) {
   CHART_DEFS.forEach(cd=>{
     const dataKey = DATA_KEY_MAP[cd.key];
     const data = (td[dataKey] || []).filter(d=>d[cd.key]!==null && d[cd.key]!==undefined);
-    makeChart(`chart-${panelId}-${dataKey}`, data, cd.key, cd.color, cd.tMin, cd.tMax, cd.showDose, masterLabels);
+    makeChart(`chart-${panelId}-${dataKey}`, data, cd.key, cd.color, cd.tMin, cd.tMax, masterLabels);
   });
 }
 
@@ -1977,7 +1890,6 @@ function switchTab(key, btn) {
     }
 
     updateWcToggleVisibility(key);
-    updateDoseToggleVisibility(key);
 
     if (!initialized[key]) {
       buildTankPanel(key, key);
@@ -2016,7 +1928,6 @@ buildTankPanel(currentTankKey, currentTankKey);
 initialized[currentTankKey] = true;
 document.getElementById('lastBadge').innerHTML = `Last: <strong>${RAW[currentTankKey].latest.lastDate}</strong>`;
 updateWcToggleVisibility(currentTankKey);
-updateDoseToggleVisibility(currentTankKey);
 </script>
 </body>
 </html>

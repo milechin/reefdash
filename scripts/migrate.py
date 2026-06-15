@@ -21,7 +21,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-CURRENT_VERSION = 2
+CURRENT_VERSION = 3
 
 # ---------------------------------------------------------------------------
 # Migrations
@@ -50,9 +50,20 @@ def migrate_v1_to_v2(data):
     return data
 
 
+def migrate_v2_to_v3(data):
+    """Remove the AFR (All For Reef) dose feature: drop the dose array and latest.dose."""
+    for tank in _tanks(data):
+        data[tank].pop('dose', None)
+        data[tank].get('latest', {}).pop('dose', None)
+
+    data['_schemaVersion'] = 3
+    return data
+
+
 MIGRATIONS = {
     1: migrate_v0_to_v1,
     2: migrate_v1_to_v2,
+    3: migrate_v2_to_v3,
 }
 
 # ---------------------------------------------------------------------------
