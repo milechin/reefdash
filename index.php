@@ -792,6 +792,13 @@ tr:last-child td { border:none; }
         <p>Each tank panel has an <strong>Equipment</strong> section showing items with their expiry dates and warranty status. Items expiring within <strong>180 days</strong> are flagged in amber, <strong>expired</strong> items appear in red, and active items are shown in green. Use <strong>+ Add</strong> to add a new item or <strong>✎ Edit</strong> to update or delete an existing one. Changes are saved to <strong>equipment.json</strong> immediately.</p>
       </div>
 
+      <div class="help-card">
+        <div class="help-card-icon">💉</div>
+        <h3>Dosing &amp; Consumption</h3>
+        <p>The <strong>Dosing</strong> section records each supplement's daily rate over a date window (use <strong>+ Add</strong>; leave “To” blank for an ongoing dose), manages supplement chemistry under <strong>⚙ Agents</strong>, and tracks each <strong>bottle</strong>: the container size, the volume left (decreasing automatically from the daily dose), and estimated days until empty. Press <strong>⛽ Fill</strong> when you top a bottle up — it records the new volume and adds a Daily Log entry.</p>
+        <p>The <strong>⚖️ Consumption</strong> card shows each parameter's true daily consumption — the observed change corrected for water-change dilution and supplement dosing (All For Reef, Balling B) — averaged over recent clean intervals. Each interval is flagged <span style="color:#2ecc71">✅ clean</span> (no water change), <span style="color:#f39c12">🟡 corrected</span> (1–2, fully accounted), or <span style="color:#e74c3c">🔴 noisy</span>. Tune the salt mix, interval rules, and tank volumes under <strong>⚙ Consumption</strong>; Magnesium stays “awaiting data” until you log it.</p>
+      </div>
+
     </div>
 
     <div class="help-footer">
@@ -1890,7 +1897,7 @@ function buildTankPanel(panelId, tankKey) {
   if (dateBarEl && dateBarStash) dateBarStash.appendChild(dateBarEl);
 
   // Clear and repopulate the panel
-  panel.innerHTML = kpiHtml + chartHtml + blogHtml + equipHtml + dosingHtml;
+  panel.innerHTML = kpiHtml + chartHtml + consumptionHtml(tankKey) + blogHtml + equipHtml + dosingHtml;
 
   // Move the dateBar element into the anchor slot between KPIs and charts
   const anchor = document.getElementById('controls-anchor-' + panelId);
@@ -2342,6 +2349,43 @@ function submitConsumptionSettings(btn) {
       CONSUMPTION.saltMix = snap.saltMix; CONSUMPTION.calc = snap.calc; CONSUMPTION.tanks = snap.tanks;
       msg.style.color = '#f39c12'; msg.textContent = '✗ Could not reach server.';
     });
+}
+
+// ── CONSUMPTION RESULTS (computed on every panel build)
+const CONSUMPTION_PARAMS = [
+  {key:'alk', label:'Alk', unit:'dKH', array:'alk',       valKey:'ALK'},
+  {key:'ca',  label:'Ca',  unit:'ppm', array:'calcium',   valKey:'Calcium'},
+  {key:'mg',  label:'Mg',  unit:'ppm', array:'magnesium', valKey:'Magnesium'},
+];
+const FLAG_EMOJI = {clean:'✅', corrected:'🟡', noisy:'🔴'};
+
+function consumptionHtml(tankKey) {
+  const td = RAW[tankKey];
+  const today = new Date().toISOString().split('T')[0];
+  const hasDosing = DOSING.doses.some(d => d.tank === tankKey);
+  let rows = '';
+  CONSUMPTION_PARAMS.forEach(p => {
+    const readings = (td[p.array] || [])
+      .filter(r => r[p.valKey] !== null && r[p.valKey] !== undefined)
+      .map(r => ({date: r.date, value: r[p.valKey]}));
+    const blank = txt => `<tr><td style="font-size:11px">${p.label}</td><td colspan="3" style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim)">${txt}</td></tr>`;
+    if (readings.length < 2) { rows += blank('awaiting data'); return; }
+    const intervals = Consumption.computeIntervals({readings, dosing:DOSING, consumption:CONSUMPTION, waterChanges:WATER_CHANGES[tankKey]||[], tank:tankKey, param:p.key});
+    const rr = Consumption.rollingRate(intervals, CONSUMPTION.calc, today);
+    if (rr.avgRate === null) { rows += blank('no qualifying intervals'); return; }
+    const iv = rr.latest;
+    const bd = `latest ${iv.t1}→${iv.t2} (${iv.days}d): observed ${iv.observed.toFixed(2)}, −dose ${iv.agentTotal.toFixed(2)}, −WC ${iv.wc.toFixed(2)} = ${iv.trueConsumption.toFixed(2)}`;
+    rows += `<tr>
+      <td style="font-size:11px">${p.label}</td>
+      <td style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text)">${rr.avgRate.toFixed(2)} ${p.unit}/day</td>
+      <td style="font-family:'Space Mono',monospace;font-size:9px;color:#5a8aaa">${rr.n}×</td>
+      <td title="${bd}" style="font-family:'Space Mono',monospace;font-size:9px;color:#5a8aaa;cursor:help">${FLAG_EMOJI[iv.flag]} ${iv.rate.toFixed(2)}</td>
+    </tr>`;
+  });
+  let h = `<div class="slabel">⚖️ Consumption <span style="font-weight:400;color:var(--dim);font-size:10px;text-transform:none;letter-spacing:0;">${CONSUMPTION.calc.windowDays || 90}-day avg daily rate</span></div>`;
+  h += `<div class="tcard"><table><thead><tr><th>PARAM</th><th>RATE</th><th>N</th><th>LATEST</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  if (!hasDosing) h += `<div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--warn);margin-top:4px;">No dosing configured — rates are not corrected for supplements.</div>`;
+  return h;
 }
 
 // ── TAB SWITCHING
