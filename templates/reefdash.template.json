@@ -6,5 +6,7 @@
     "version": "version.json",
     "devMarker": "reefdash-dev",
     "parameters": "config/parameters.json",
-    "ui": "config/ui.json"
+    "ui": "config/ui.json",
+    "dosing": "config/dosing.json",
+    "consumption": "config/consumption.json"
 }

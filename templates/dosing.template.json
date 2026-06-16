@@ -1,0 +1,13 @@
+{
+  "agents": {
+    "afr":      { "label": "All For Reef",    "perMl": { "alk": 5.6,   "ca": 40.0, "mg": 1.9 } },
+    "ballingB": { "label": "Balling B (Alk)", "perMl": { "alk": 6.664 } }
+  },
+  "doses": [
+    { "tank": "display", "agent": "afr",      "mlPerDay": 2,  "from": "YYYY-MM-DD", "to": null },
+    { "tank": "display", "agent": "ballingB", "mlPerDay": 30, "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }
+  ],
+  "bottles": [
+    { "tank": "display", "agent": "afr", "containerVolumeMl": 500, "fillMl": 500, "filledOn": "YYYY-MM-DD" }
+  ]
+}

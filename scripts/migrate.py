@@ -21,7 +21,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-CURRENT_VERSION = 3
+CURRENT_VERSION = 4
 
 # ---------------------------------------------------------------------------
 # Migrations
@@ -60,10 +60,25 @@ def migrate_v2_to_v3(data):
     return data
 
 
+def migrate_v3_to_v4(data):
+    """Per-event water-change volume: waterChanges ["YYYY-MM-DD"] -> [{date, volumeGal}].
+    Existing date-only entries get volumeGal=null (calc falls back to the tank's wcVolumeGal)."""
+    for tank in _tanks(data):
+        wc = data[tank].get('waterChanges', [])
+        data[tank]['waterChanges'] = [
+            entry if isinstance(entry, dict) else {'date': entry, 'volumeGal': None}
+            for entry in wc
+        ]
+
+    data['_schemaVersion'] = 4
+    return data
+
+
 MIGRATIONS = {
     1: migrate_v0_to_v1,
     2: migrate_v1_to_v2,
     3: migrate_v2_to_v3,
+    4: migrate_v3_to_v4,
 }
 
 # ---------------------------------------------------------------------------

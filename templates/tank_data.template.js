@@ -3,7 +3,7 @@
 //
 // SCHEMA VERSION: increment SCHEMA_VERSION and RAW._schemaVersion together
 // whenever the RAW structure changes, then migrate the production file.
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 //
 // VALUE KEY CASING — must match exactly when adding entries:
 //   temp      → Temp
@@ -21,7 +21,7 @@ const SCHEMA_VERSION = 3;
 // the browser. No migration framework — changes are documented in git commit diffs.
 
 const RAW = {
-  "_schemaVersion": 3,
+  "_schemaVersion": 4,
   "display": {
     "latest": {
       "temp": 0,
@@ -44,7 +44,7 @@ const RAW = {
     "phosphate":  [{"date": "YYYY-MM-DD", "Phosphate": 0}],
     "ammonia":    [{"date": "YYYY-MM-DD", "Ammonia": 0}],
     "magnesium":  [{"date": "YYYY-MM-DD", "Magnesium": 0}],
-    "waterChanges": ["YYYY-MM-DD"],
+    "waterChanges": [{"date": "YYYY-MM-DD", "volumeGal": null}],
     "blog":       [{"date": "YYYY-MM-DD", "text": ""}]
   },
   "qrt": {
@@ -69,7 +69,7 @@ const RAW = {
     "phosphate":  [{"date": "YYYY-MM-DD", "Phosphate": 0}],
     "ammonia":    [{"date": "YYYY-MM-DD", "Ammonia": 0}],
     "magnesium":  [{"date": "YYYY-MM-DD", "Magnesium": 0}],
-    "waterChanges": ["YYYY-MM-DD"],
+    "waterChanges": [{"date": "YYYY-MM-DD", "volumeGal": null}],
     "blog":       [{"date": "YYYY-MM-DD", "text": ""}]
   },
   "laurens": {
@@ -94,7 +94,7 @@ const RAW = {
     "phosphate":  [{"date": "YYYY-MM-DD", "Phosphate": 0}],
     "ammonia":    [{"date": "YYYY-MM-DD", "Ammonia": 0}],
     "magnesium":  [{"date": "YYYY-MM-DD", "Magnesium": 0}],
-    "waterChanges": ["YYYY-MM-DD"],
+    "waterChanges": [{"date": "YYYY-MM-DD", "volumeGal": null}],
     "blog":       [{"date": "YYYY-MM-DD", "text": ""}]
   }
 };

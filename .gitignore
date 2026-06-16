@@ -10,3 +10,5 @@ version.json
 config/reefdash.json
 config/parameters.json
 config/ui.json
+config/dosing.json
+config/consumption.json

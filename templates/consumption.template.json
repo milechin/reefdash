@@ -1,0 +1,9 @@
+{
+  "saltMix": { "label": "Red Sea Reef Pro", "alk": 12.5, "ca": 465, "mg": 1390 },
+  "calc":    { "minDays": 7, "maxDays": 30, "windowDays": 90, "outlierFactor": 3 },
+  "tanks": {
+    "display": { "volumeGal": 20, "wcVolumeGal": 4 },
+    "qrt":     { "volumeGal": 10, "wcVolumeGal": 2 },
+    "laurens": { "volumeGal": 15, "wcVolumeGal": 3 }
+  }
+}

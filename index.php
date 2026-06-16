@@ -36,6 +36,16 @@ $uiConfig += [
   'maintenance' => ['recentDays'=>7,'dueSoonDays'=>14],
   'equipment'   => ['expiryWarnDays'=>180],
 ];
+$dosingFile = __DIR__ . '/' . ($appConfig['dosing'] ?? 'config/dosing.json');
+$dosingConfig = file_exists($dosingFile) ? (json_decode(file_get_contents($dosingFile), true) ?: []) : [];
+$dosingConfig += ['agents' => new stdClass(), 'doses' => [], 'bottles' => []];
+$consumptionFile = __DIR__ . '/' . ($appConfig['consumption'] ?? 'config/consumption.json');
+$consumptionConfig = file_exists($consumptionFile) ? (json_decode(file_get_contents($consumptionFile), true) ?: []) : [];
+$consumptionConfig += [
+  'saltMix' => ['alk'=>12.5, 'ca'=>465, 'mg'=>1390],
+  'calc'    => ['minDays'=>7, 'maxDays'=>30, 'windowDays'=>90, 'outlierFactor'=>3],
+  'tanks'   => new stdClass(),
+];
 ?>
 <script src="<?php echo htmlspecialchars($tankDataPath); ?>?v=<?php echo $v; ?>"></script>
 <script>
@@ -44,6 +54,8 @@ const TANK_CONFIGS  = <?php echo json_encode($tanks); ?>;
 const EQUIPMENT_RAW = <?php echo json_encode($equipment); ?>;
 const PARAMETERS    = <?php echo json_encode($parametersData); ?>;
 const UI_CONFIG     = <?php echo json_encode($uiConfig); ?>;
+const DOSING        = <?php echo json_encode($dosingConfig); ?>;
+const CONSUMPTION   = <?php echo json_encode($consumptionConfig); ?>;
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
@@ -732,7 +744,7 @@ function makeChart(id, data, valueKey, color, tMin, tMax, masterLabels) {
   // Fall back to building locally if not provided (e.g. initial buildTankPanel call)
   const allDates = masterLabels || (() => {
     const wcDates = showWaterChanges ? filterByDate(
-      (WATER_CHANGES[currentTankKey] || []).map(d => ({date: d}))
+      (WATER_CHANGES[currentTankKey] || []).map(w => ({date: w.date}))
     ).map(d => d.date) : [];
     return [...new Set([
       ...filtered.map(d => d.date),
@@ -778,7 +790,7 @@ function makeChart(id, data, valueKey, color, tMin, tMax, masterLabels) {
     };
   }
   if (showWaterChanges) {
-    const wcSet = new Set(WATER_CHANGES[currentTankKey] || []);
+    const wcSet = new Set((WATER_CHANGES[currentTankKey] || []).map(w => w.date));
     allDates.forEach((d, i) => {
       if (wcSet.has(d)) {
         annotations[`wc_${i}`] = {
@@ -891,7 +903,7 @@ function buildMasterLabels(tankKey) {
 
   // Add water change dates if toggle is on
   if (showWaterChanges) {
-    (WATER_CHANGES[tankKey] || []).forEach(d => dates.push(d));
+    (WATER_CHANGES[tankKey] || []).forEach(w => dates.push(w.date));
   }
 
   // Always include blog entry dates
@@ -1241,7 +1253,7 @@ function openLogWC() {
 
   if (_logWCFlatpickr) { _logWCFlatpickr.destroy(); _logWCFlatpickr = null; }
 
-  const wcDates = WATER_CHANGES[currentTankKey] || [];
+  const wcDates = (WATER_CHANGES[currentTankKey] || []).map(w => w.date);
   const today = new Date().toISOString().split('T')[0];
 
   const deleteBtn = document.getElementById('logWCDeleteBtn');
@@ -1286,10 +1298,11 @@ function submitLogWC(btn) {
   const td = RAW[currentTankKey];
   const snap = snapshotTank(td);   // for rollback if the save fails
   const wc = WATER_CHANGES[currentTankKey];
-  if (!wc.includes(date)) {
-    const idx = wc.findIndex(d => d > date);
-    if (idx === -1) wc.push(date);
-    else wc.splice(idx, 0, date);
+  if (!wc.some(w => w.date === date)) {
+    const entry = {date, volumeGal: null};   // volumeGal entry added in Phase 2; null = use tank standard
+    const idx = wc.findIndex(w => w.date > date);
+    if (idx === -1) wc.push(entry);
+    else wc.splice(idx, 0, entry);
   }
 
   const commit = () => {
@@ -1334,7 +1347,7 @@ function deleteLogWC(btn) {
   const td = RAW[currentTankKey];
   const snap = snapshotTank(td);   // for rollback if the save fails
   const wc = WATER_CHANGES[currentTankKey];
-  const idx = wc.indexOf(date);
+  const idx = wc.findIndex(w => w.date === date);
   if (idx === -1) return;
   wc.splice(idx, 1);
 
@@ -1599,7 +1612,7 @@ function buildTankPanel(panelId, tankKey) {
 
   // Days since last water change
   const _today = new Date().toISOString().split('T')[0];
-  const wcDates = (WATER_CHANGES[tankKey] || []).filter(d => d <= _today).sort();
+  const wcDates = (WATER_CHANGES[tankKey] || []).map(w => w.date).filter(d => d <= _today).sort();
   const lastWc = wcDates[wcDates.length - 1] || null;
   let daysSinceWc = null;
   if (lastWc) {

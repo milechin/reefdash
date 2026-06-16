@@ -23,10 +23,14 @@ Open http://localhost:8080. No Node.js, no npm, no build step.
 - `save.php` — POST endpoint; validates content starts with `const RAW`, writes `data/tank_data.js`
 - `save_targets.php` — POST endpoint; writes raw JSON body to `config/targets.json`
 - `save_equipment.php` — POST endpoint; writes raw JSON body to `config/equipment.json`
+- `save_dosing.php` — POST endpoint; writes raw JSON body to `config/dosing.json`
+- `save_consumption.php` — POST endpoint; writes raw JSON body to `config/consumption.json`
 - `config/tanks.json` — tank definitions: `[{key, label, emoji}]`; drives tabs and panels (gitignored)
 - `config/targets.json` — persisted min/max target values per parameter (gitignored)
 - `config/equipment.json` — per-tank equipment: `[{tank, item, purchased, expires, comment}]` (gitignored)
 - `config/ui.json` — UI config injected as `UI_CONFIG`: date-range `presets`, `maintenance` recency thresholds, `equipment.expiryWarnDays` (gitignored; PHP head has fallback defaults)
+- `config/dosing.json` — injected as `DOSING`: `{agents:{afr,ballingB,…→{label,perMl:{alk,ca,mg}}}, doses:[{tank,agent,mlPerDay,from,to}]}` for consumption-rate correction (gitignored)
+- `config/consumption.json` — injected as `CONSUMPTION`: `{saltMix:{alk,ca,mg}, calc:{minDays,maxDays,windowDays,outlierFactor}, tanks:{<key>:{volumeGal,wcVolumeGal}}}` (gitignored; PHP head has fallback defaults)
 - `scripts/migrate.py` — schema migration tool; run from project root: `python3 scripts/migrate.py`
 - `scripts/deploy.sh` — rsync deploy to dev/prod NAS (gitignored)
 - `Fish Tank Log - Display.csv` — source for bulk nitrate import (gitignored)
