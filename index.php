@@ -48,6 +48,7 @@ $consumptionConfig += [
 ];
 ?>
 <script src="<?php echo htmlspecialchars($tankDataPath); ?>?v=<?php echo $v; ?>"></script>
+<script src="consumption.js?v=<?php echo file_exists(__DIR__.'/consumption.js') ? filemtime(__DIR__.'/consumption.js') : time(); ?>"></script>
 <script>
 const SAVED_TARGETS = <?php echo json_encode($savedTargets); ?>;
 const TANK_CONFIGS  = <?php echo json_encode($tanks); ?>;
@@ -461,6 +462,7 @@ tr:last-child td { border:none; }
       </button>
       <div style="width:1px;background:var(--border);height:22px;margin:0 2px"></div>
       <button class="gear-btn" onclick="openTargetEditor()" title="Edit target ranges">⚙ Targets</button>
+      <button class="gear-btn" onclick="openConsumptionSettings()" title="Salt mix, calc, tank volumes">⚙ Consumption</button>
     </div>
   </div>
 
@@ -516,6 +518,11 @@ tr:last-child td { border:none; }
         <label style="color:var(--text);font-weight:600;">📅 Date</label>
         <input type="text" class="target-num-input" id="logWCDate" placeholder="Select a date" readonly style="flex:1;max-width:none;border-color:rgba(59,130,246,0.4);cursor:pointer;">
       </div>
+      <div class="target-row-edit" style="margin-bottom:4px;">
+        <label style="color:var(--text);font-weight:600;">Volume (gal)</label>
+        <input type="number" step="0.1" min="0" class="target-num-input" id="logWCVolume" placeholder="tank standard" style="flex:1;max-width:none;border-color:rgba(59,130,246,0.4);">
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);margin-bottom:6px;">Blank = use this tank's standard water-change volume.</div>
       <div id="logWCMsg" style="font-family:'Space Mono',monospace;font-size:11px;min-height:18px;margin-top:8px;"></div>
       <div class="modal-footer">
         <button class="btn-reset" onclick="closeLogWC()">Cancel</button>
@@ -580,6 +587,131 @@ tr:last-child td { border:none; }
         <button class="btn-reset" onclick="closeEquip()">Cancel</button>
         <button id="equipDeleteBtn" class="btn-reset" style="display:none;border-color:rgba(231,76,60,0.4);color:#e74c3c;" onclick="deleteEquip(this)">🗑 Delete</button>
         <button class="btn-apply" onclick="submitEquip(this)">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="dosingModal" onclick="if(event.target===this)closeDosing()">
+    <div class="modal" style="max-width:460px">
+      <div class="modal-header">
+        <h2>💉 <span id="dosingModalTitle">Dose</span></h2>
+        <button class="modal-close" onclick="closeDosing()">✕</button>
+      </div>
+      <div style="padding:4px 0 12px; font-family:'Space Mono',monospace; font-size:11px; color:var(--dim);">
+        Tank: <span id="dosingTankLabel" style="color:var(--biolume)"></span>
+      </div>
+      <div class="target-row-edit" style="margin-bottom:10px;">
+        <label style="color:var(--text);font-weight:600;">Agent</label>
+        <select class="target-num-input" id="dosingAgent" style="flex:1;max-width:none;"></select>
+      </div>
+      <div class="target-row-edit" style="margin-bottom:10px;">
+        <label style="color:var(--text);font-weight:600;">mL / day</label>
+        <input type="number" step="0.1" min="0" class="target-num-input" id="dosingMlPerDay" placeholder="e.g. 2" style="flex:1;max-width:none;">
+      </div>
+      <div class="target-row-edit" style="margin-bottom:10px;">
+        <label style="color:var(--text);font-weight:600;">From</label>
+        <input type="date" class="target-num-input" id="dosingFrom" style="flex:1;max-width:none;">
+      </div>
+      <div class="target-row-edit" style="margin-bottom:4px;">
+        <label style="color:var(--text);font-weight:600;">To</label>
+        <input type="date" class="target-num-input" id="dosingTo" style="flex:1;max-width:none;">
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);margin-bottom:8px;">Leave “To” blank for an ongoing dose.</div>
+      <div id="dosingMsg" style="font-family:'Space Mono',monospace;font-size:11px;min-height:18px;margin-top:8px;"></div>
+      <div class="modal-footer">
+        <button class="btn-reset" onclick="closeDosing()">Cancel</button>
+        <button id="dosingDeleteBtn" class="btn-reset" style="display:none;border-color:rgba(231,76,60,0.4);color:#e74c3c;" onclick="deleteDosing(this)">🗑 Delete</button>
+        <button class="btn-apply" onclick="submitDosing(this)">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="agentsModal" onclick="if(event.target===this)closeAgents()">
+    <div class="modal" style="max-width:560px">
+      <div class="modal-header">
+        <h2>⚙ Dosing Agents</h2>
+        <button class="modal-close" onclick="closeAgents()">✕</button>
+      </div>
+      <div style="padding:4px 0 10px; font-family:'Space Mono',monospace; font-size:10px; color:var(--dim);">
+        Per-mL contribution of each supplement (dKH for alk, mg for ca/mg). Used to correct consumption.
+      </div>
+      <div id="agentsList"></div>
+      <button onclick="addAgentRow()" style="font-family:'Space Mono',monospace;font-size:11px;padding:5px 12px;margin-top:8px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.35);color:var(--biolume);border-radius:4px;cursor:pointer;">+ Add Agent</button>
+      <div id="agentsMsg" style="font-family:'Space Mono',monospace;font-size:11px;min-height:18px;margin-top:8px;"></div>
+      <div class="modal-footer">
+        <button class="btn-reset" onclick="closeAgents()">Cancel</button>
+        <button class="btn-apply" onclick="submitAgents(this)">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="fillModal" onclick="if(event.target===this)closeFill()">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <h2>⛽ Fill Bottle</h2>
+        <button class="modal-close" onclick="closeFill()">✕</button>
+      </div>
+      <div style="padding:4px 0 12px; font-family:'Space Mono',monospace; font-size:11px; color:var(--dim);">
+        <span id="fillAgentLabel" style="color:var(--biolume)"></span> · <span id="fillTankLabel"></span>
+      </div>
+      <div class="target-row-edit" style="margin-bottom:10px;">
+        <label style="color:var(--text);font-weight:600;">Container (mL)</label>
+        <input type="number" step="1" min="0" class="target-num-input" id="fillContainer" style="flex:1;max-width:none;">
+      </div>
+      <div class="target-row-edit" style="margin-bottom:4px;">
+        <label style="color:var(--text);font-weight:600;">Volume now (mL)</label>
+        <input type="number" step="1" min="0" class="target-num-input" id="fillVolume" style="flex:1;max-width:none;">
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);margin-bottom:8px;">Records today's fill and adds a Daily Log entry.</div>
+      <div id="fillMsg" style="font-family:'Space Mono',monospace;font-size:11px;min-height:18px;margin-top:8px;"></div>
+      <div class="modal-footer">
+        <button class="btn-reset" onclick="closeFill()">Cancel</button>
+        <button class="btn-apply" onclick="submitFill(this)">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="consumptionModal" onclick="if(event.target===this)closeConsumptionSettings()">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-header">
+        <h2>⚙ Consumption Settings</h2>
+        <button class="modal-close" onclick="closeConsumptionSettings()">✕</button>
+      </div>
+
+      <div class="slabel" style="margin-top:4px">Salt Mix</div>
+      <div class="target-row-edit" style="margin-bottom:8px;">
+        <label style="color:var(--text);font-weight:600;">Label</label>
+        <input type="text" class="target-num-input" id="cs_salt_label" style="flex:1;max-width:none;">
+      </div>
+      <div class="target-row-edit" style="margin-bottom:10px;gap:8px;">
+        <label style="color:var(--text);font-weight:600;">Alk / Ca / Mg</label>
+        <input type="number" step="0.1" class="target-num-input" id="cs_salt_alk" placeholder="dKH">
+        <input type="number" step="1"   class="target-num-input" id="cs_salt_ca"  placeholder="ppm">
+        <input type="number" step="1"   class="target-num-input" id="cs_salt_mg"  placeholder="ppm">
+      </div>
+
+      <div class="slabel">Calc Parameters</div>
+      <div class="target-row-edit" style="margin-bottom:10px;gap:8px;">
+        <label style="color:var(--text);font-weight:600;">min / max / window / outlier×</label>
+        <input type="number" step="1" class="target-num-input" id="cs_calc_minDays"  placeholder="min d">
+        <input type="number" step="1" class="target-num-input" id="cs_calc_maxDays"  placeholder="max d">
+        <input type="number" step="1" class="target-num-input" id="cs_calc_windowDays" placeholder="window d">
+        <input type="number" step="0.1" class="target-num-input" id="cs_calc_outlierFactor" placeholder="×">
+      </div>
+
+      <div class="slabel">Tank Volumes (gal)</div>
+      <?php foreach ($tanks as $tank): $k = htmlspecialchars($tank['key']); ?>
+      <div class="target-row-edit" style="margin-bottom:8px;gap:8px;">
+        <label style="color:var(--text);font-weight:600;"><?php echo htmlspecialchars($tank['label']); ?></label>
+        <input type="number" step="0.1" class="target-num-input" id="cs_vol_<?php echo $k; ?>" placeholder="tank gal">
+        <input type="number" step="0.1" class="target-num-input" id="cs_wc_<?php echo $k; ?>" placeholder="WC gal">
+      </div>
+      <?php endforeach; ?>
+
+      <div id="consumptionMsg" style="font-family:'Space Mono',monospace;font-size:11px;min-height:18px;margin-top:8px;"></div>
+      <div class="modal-footer">
+        <button class="btn-reset" onclick="closeConsumptionSettings()">Cancel</button>
+        <button class="btn-apply" onclick="submitConsumptionSettings(this)">Save</button>
       </div>
     </div>
   </div>
@@ -1262,6 +1394,11 @@ function openLogWC() {
   function updateDeleteBtn(date) {
     deleteBtn.style.display = date && wcDates.includes(date) ? '' : 'none';
   }
+  // Load the existing per-event volume for a date (blank when none / uses tank standard)
+  function loadVolume(date) {
+    const entry = (WATER_CHANGES[currentTankKey] || []).find(w => w.date === date);
+    document.getElementById('logWCVolume').value = (entry && entry.volumeGal != null) ? entry.volumeGal : '';
+  }
 
   _logWCFlatpickr = flatpickr('#logWCDate', {
     defaultDate: today,
@@ -1277,10 +1414,12 @@ function openLogWC() {
     onChange(selectedDates, dateStr) {
       document.getElementById('logWCMsg').textContent = '';
       updateDeleteBtn(dateStr);
+      loadVolume(dateStr);
     }
   });
 
   updateDeleteBtn(today);
+  loadVolume(today);
 }
 
 function closeLogWC() {
@@ -1295,11 +1434,22 @@ function submitLogWC(btn) {
     return;
   }
 
+  const volRaw = document.getElementById('logWCVolume').value.trim();
+  const volumeGal = volRaw === '' ? null : parseFloat(volRaw);
+  if (volumeGal !== null && (isNaN(volumeGal) || volumeGal < 0)) {
+    document.getElementById('logWCMsg').style.color = '#e74c3c';
+    document.getElementById('logWCMsg').textContent = 'Volume must be a positive number (or blank).';
+    return;
+  }
+
   const td = RAW[currentTankKey];
   const snap = snapshotTank(td);   // for rollback if the save fails
   const wc = WATER_CHANGES[currentTankKey];
-  if (!wc.some(w => w.date === date)) {
-    const entry = {date, volumeGal: null};   // volumeGal entry added in Phase 2; null = use tank standard
+  const existing = wc.find(w => w.date === date);
+  if (existing) {
+    existing.volumeGal = volumeGal;   // editing an existing WC's volume
+  } else {
+    const entry = {date, volumeGal};
     const idx = wc.findIndex(w => w.date > date);
     if (idx === -1) wc.push(entry);
     else wc.splice(idx, 0, entry);
@@ -1723,13 +1873,24 @@ function buildTankPanel(panelId, tankKey) {
     equipHtml += '</tbody></table></div>';
   }
 
+  // ── Dosing section
+  const tankDoses = DOSING.doses.filter(d => d.tank === tankKey);
+  let dosingHtml = `<div class="slabel">Dosing <button onclick="openDosing()" style="font-family:'Space Mono',monospace;font-size:11px;padding:4px 10px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.35);color:var(--biolume);border-radius:4px;cursor:pointer;letter-spacing:0.5px;text-transform:none;">+ Add</button> <button onclick="openAgents()" style="font-family:'Space Mono',monospace;font-size:11px;padding:4px 10px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.35);color:#a78bfa;border-radius:4px;cursor:pointer;letter-spacing:0.5px;text-transform:none;">⚙ Agents</button></div>`;
+  if (tankDoses.length > 0) {
+    dosingHtml += '<div class="tcard"><table>'
+      + '<thead><tr><th>AGENT</th><th>mL/DAY</th><th>FROM</th><th>TO</th><th></th></tr></thead><tbody>';
+    tankDoses.forEach(d => { dosingHtml += dosingRowHtml(d, DOSING.doses.indexOf(d)); });
+    dosingHtml += '</tbody></table></div>';
+  }
+  dosingHtml += bottlesHtml(tankKey);
+
   // Rescue dateBar before innerHTML wipe (it may currently be a child of this panel)
   const dateBarEl = document.getElementById('dateBar');
   const dateBarStash = document.getElementById('dateBarStash');
   if (dateBarEl && dateBarStash) dateBarStash.appendChild(dateBarEl);
 
   // Clear and repopulate the panel
-  panel.innerHTML = kpiHtml + chartHtml + blogHtml + equipHtml;
+  panel.innerHTML = kpiHtml + chartHtml + blogHtml + equipHtml + dosingHtml;
 
   // Move the dateBar element into the anchor slot between KPIs and charts
   const anchor = document.getElementById('controls-anchor-' + panelId);
@@ -1878,6 +2039,309 @@ function deleteEquip(btn) {
     () => { EQUIPMENT_RAW.length = 0; EQUIPMENT_RAW.push(...snap); },
     btn
   );
+}
+
+// ── DOSING
+const agentLabel = (key) => (DOSING.agents[key] && DOSING.agents[key].label) || key;
+
+function dosingRowHtml(d, idx) {
+  return `<tr>
+    <td style="font-size:11px">${agentLabel(d.agent)}</td>
+    <td style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text)">${d.mlPerDay}</td>
+    <td style="font-family:'Space Mono',monospace;font-size:10px;color:#5a8aaa">${d.from || '—'}</td>
+    <td style="font-family:'Space Mono',monospace;font-size:10px;color:#5a8aaa">${d.to || 'ongoing'}</td>
+    <td><button class="blog-edit-btn" onclick="openDosing(${idx})">✎ Edit</button></td>
+  </tr>`;
+}
+
+let _dosingEditIdx = null;
+
+function closeDosing() { document.getElementById('dosingModal').classList.remove('open'); }
+
+function openDosing(idx) {
+  _dosingEditIdx = idx !== undefined ? idx : null;
+  const isEdit = _dosingEditIdx !== null;
+  document.getElementById('dosingModalTitle').textContent = isEdit ? 'Edit Dose' : 'Add Dose';
+  document.getElementById('dosingTankLabel').textContent = TANK_NAMES[currentTankKey] || currentTankKey;
+  document.getElementById('dosingMsg').textContent = '';
+  document.getElementById('dosingDeleteBtn').style.display = isEdit ? '' : 'none';
+
+  // Populate agent options from DOSING.agents
+  const sel = document.getElementById('dosingAgent');
+  sel.innerHTML = Object.keys(DOSING.agents)
+    .map(k => `<option value="${k}">${agentLabel(k)}</option>`).join('');
+
+  const d = isEdit ? DOSING.doses[_dosingEditIdx] : null;
+  sel.value                                     = d ? d.agent : (sel.options[0] && sel.options[0].value) || '';
+  document.getElementById('dosingMlPerDay').value = d ? d.mlPerDay : '';
+  document.getElementById('dosingFrom').value     = d ? (d.from || '') : new Date().toISOString().split('T')[0];
+  document.getElementById('dosingTo').value       = d ? (d.to || '') : '';
+  document.getElementById('dosingModal').classList.add('open');
+}
+
+function saveDosingAndRebuild(onSuccess, onFail, btn, msgId = 'dosingMsg') {
+  setSaving(btn, true);
+  fetch('save_dosing.php', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(DOSING)
+  })
+  .then(r => r.json())
+  .then(res => {
+    setSaving(btn, false);
+    if (res.ok) { onSuccess(); }
+    else {
+      if (onFail) onFail();
+      document.getElementById(msgId).style.color = '#e74c3c';
+      document.getElementById(msgId).textContent = '✗ Server error: ' + res.error;
+    }
+  })
+  .catch(() => {
+    setSaving(btn, false);
+    if (onFail) onFail();
+    document.getElementById(msgId).style.color = '#f39c12';
+    document.getElementById(msgId).textContent = '✗ Could not reach server.';
+  });
+}
+
+function submitDosing(btn) {
+  const agent = document.getElementById('dosingAgent').value;
+  const mlPerDay = parseFloat(document.getElementById('dosingMlPerDay').value);
+  const from = document.getElementById('dosingFrom').value || null;
+  const to   = document.getElementById('dosingTo').value || null;
+  if (!agent) {
+    document.getElementById('dosingMsg').style.color = '#e74c3c';
+    document.getElementById('dosingMsg').textContent = 'Pick an agent.';
+    return;
+  }
+  if (isNaN(mlPerDay) || mlPerDay <= 0) {
+    document.getElementById('dosingMsg').style.color = '#e74c3c';
+    document.getElementById('dosingMsg').textContent = 'Enter a mL/day greater than 0.';
+    return;
+  }
+  if (to && from && to < from) {
+    document.getElementById('dosingMsg').style.color = '#e74c3c';
+    document.getElementById('dosingMsg').textContent = '“To” must be on or after “From”.';
+    return;
+  }
+  const entry = {tank: currentTankKey, agent, mlPerDay, from, to};
+  const snap = DOSING.doses.map(d => ({...d}));   // for rollback if the save fails
+  if (_dosingEditIdx !== null) DOSING.doses[_dosingEditIdx] = entry;
+  else DOSING.doses.push(entry);
+
+  saveDosingAndRebuild(
+    () => { rebuildEquipViews(); closeDosing(); },
+    () => { DOSING.doses.length = 0; DOSING.doses.push(...snap); },
+    btn
+  );
+}
+
+function deleteDosing(btn) {
+  if (_dosingEditIdx === null) return;
+  const snap = DOSING.doses.map(d => ({...d}));   // for rollback if the save fails
+  DOSING.doses.splice(_dosingEditIdx, 1);
+  saveDosingAndRebuild(
+    () => { rebuildEquipViews(); closeDosing(); },
+    () => { DOSING.doses.length = 0; DOSING.doses.push(...snap); },
+    btn
+  );
+}
+
+// ── DOSING AGENTS EDITOR
+function closeAgents() { document.getElementById('agentsModal').classList.remove('open'); }
+
+function agentRowHtml(key, a) {
+  const pm = (a && a.perMl) || {};
+  const v = x => (x === undefined || x === null) ? '' : x;
+  return `<div class="agent-row" style="display:grid;grid-template-columns:0.9fr 1.3fr 0.7fr 0.7fr 0.7fr auto;gap:6px;align-items:center;margin-bottom:6px;">
+    <input class="ag-key target-num-input"   style="max-width:none" value="${v(key)}"        placeholder="key"   ${key ? 'readonly' : ''}>
+    <input class="ag-label target-num-input" style="max-width:none" value="${a ? v(a.label) : ''}" placeholder="label">
+    <input class="ag-alk target-num-input" type="number" step="0.001" style="max-width:none" value="${v(pm.alk)}" placeholder="alk">
+    <input class="ag-ca target-num-input"  type="number" step="0.001" style="max-width:none" value="${v(pm.ca)}"  placeholder="ca">
+    <input class="ag-mg target-num-input"  type="number" step="0.001" style="max-width:none" value="${v(pm.mg)}"  placeholder="mg">
+    <button onclick="this.closest('.agent-row').remove()" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:13px;">🗑</button>
+  </div>`;
+}
+
+function openAgents() {
+  document.getElementById('agentsMsg').textContent = '';
+  const header = `<div style="display:grid;grid-template-columns:0.9fr 1.3fr 0.7fr 0.7fr 0.7fr auto;gap:6px;font-family:'Space Mono',monospace;font-size:9px;color:var(--dim);margin-bottom:4px;">
+    <span>KEY</span><span>LABEL</span><span>alk/mL</span><span>ca/mL</span><span>mg/mL</span><span></span></div>`;
+  document.getElementById('agentsList').innerHTML = header
+    + Object.entries(DOSING.agents).map(([k, a]) => agentRowHtml(k, a)).join('');
+  document.getElementById('agentsModal').classList.add('open');
+}
+
+function addAgentRow() {
+  document.getElementById('agentsList').insertAdjacentHTML('beforeend', agentRowHtml('', null));
+}
+
+function submitAgents(btn) {
+  const msg = document.getElementById('agentsMsg');
+  const rows = [...document.querySelectorAll('#agentsList .agent-row')];
+  const agents = {};
+  for (const row of rows) {
+    const key = row.querySelector('.ag-key').value.trim();
+    if (!key) continue;
+    if (agents[key]) { msg.style.color = '#e74c3c'; msg.textContent = `Duplicate key: ${key}`; return; }
+    const num = sel => { const x = parseFloat(row.querySelector(sel).value); return isNaN(x) ? undefined : x; };
+    const perMl = {};
+    ['alk','ca','mg'].forEach(p => { const x = num('.ag-'+p); if (x !== undefined) perMl[p] = x; });
+    if (perMl.alk === undefined && perMl.ca === undefined && perMl.mg === undefined) {
+      msg.style.color = '#e74c3c'; msg.textContent = `Agent "${key}" needs at least one per-mL value.`; return;
+    }
+    agents[key] = { label: row.querySelector('.ag-label').value.trim() || key, perMl };
+  }
+  // Block removing an agent still referenced by a dose
+  const orphan = DOSING.doses.find(d => !agents[d.agent]);
+  if (orphan) { msg.style.color = '#e74c3c'; msg.textContent = `Agent "${orphan.agent}" is still used by a dose — remove those doses first.`; return; }
+
+  const snap = DOSING.agents;
+  DOSING.agents = agents;
+  saveDosingAndRebuild(
+    () => { rebuildEquipViews(); closeAgents(); },
+    () => { DOSING.agents = snap; },
+    btn,
+    'agentsMsg'
+  );
+}
+
+// ── DOSING BOTTLES
+function bottlesHtml(tankKey) {
+  const today = new Date().toISOString().split('T')[0];
+  const bottles = DOSING.bottles.filter(b => b.tank === tankKey);
+  if (!bottles.length) return '';
+  let h = '<div class="tcard" style="margin-top:8px"><table>'
+    + '<thead><tr><th>BOTTLE</th><th>CONTAINER</th><th>LEFT</th><th>DAYS LEFT</th><th></th></tr></thead><tbody>';
+  bottles.forEach(b => {
+    const idx = DOSING.bottles.indexOf(b);
+    const mlPerDay  = Consumption.activeDose(DOSING.doses, tankKey, b.agent, today);
+    const remaining = Consumption.bottleRemainingMl(b, mlPerDay, today);
+    const daysLeft  = Consumption.bottleDaysLeft(remaining, mlPerDay);
+    let cls = 'gray', daysTxt = mlPerDay ? '—' : 'no active dose';
+    if (daysLeft !== null) {
+      daysTxt = `${Math.round(daysLeft)}d`;
+      cls = daysLeft <= 3 ? 'bad' : daysLeft <= 7 ? 'warn' : 'good';
+    }
+    h += `<tr>
+      <td style="font-size:11px">${agentLabel(b.agent)}</td>
+      <td style="font-family:'Space Mono',monospace;font-size:10px;color:#5a8aaa">${b.containerVolumeMl} mL</td>
+      <td style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text)">${remaining == null ? '—' : Math.round(remaining) + ' mL'}</td>
+      <td><span class="chip ${cls}">${daysTxt}</span></td>
+      <td><button class="blog-edit-btn" onclick="openFill(${idx})">⛽ Fill</button></td>
+    </tr>`;
+  });
+  return h + '</tbody></table></div>';
+}
+
+let _fillIdx = null;
+
+function closeFill() { document.getElementById('fillModal').classList.remove('open'); }
+
+function openFill(idx) {
+  _fillIdx = idx;
+  const b = DOSING.bottles[idx];
+  document.getElementById('fillAgentLabel').textContent = agentLabel(b.agent);
+  document.getElementById('fillTankLabel').textContent = TANK_NAMES[b.tank] || b.tank;
+  document.getElementById('fillMsg').textContent = '';
+  document.getElementById('fillContainer').value = b.containerVolumeMl ?? '';
+  document.getElementById('fillVolume').value = b.containerVolumeMl ?? '';  // default to a full fill
+  document.getElementById('fillModal').classList.add('open');
+}
+
+function submitFill(btn) {
+  const msg = document.getElementById('fillMsg');
+  const container = parseFloat(document.getElementById('fillContainer').value);
+  const fill = parseFloat(document.getElementById('fillVolume').value);
+  if (isNaN(fill) || fill < 0) { msg.style.color = '#e74c3c'; msg.textContent = 'Enter the volume now in the bottle.'; return; }
+  if (isNaN(container) || container <= 0) { msg.style.color = '#e74c3c'; msg.textContent = 'Enter the container size.'; return; }
+
+  const today = new Date().toISOString().split('T')[0];
+  const b = DOSING.bottles[_fillIdx];
+  const bottleSnap = {...b};
+  b.containerVolumeMl = container;
+  b.fillMl = fill;
+  b.filledOn = today;
+
+  // Daily Log entry for the refill (persisted to tank_data.js)
+  const td = RAW[b.tank];
+  const tankSnap = snapshotTank(td);
+  if (!td.blog) td.blog = [];
+  td.blog.push({date: today, text: `Filled ${agentLabel(b.agent)} bottle: ${fill} mL`});
+  td.blog.sort((a, c) => a.date.localeCompare(c.date));
+
+  const rollback = () => { Object.assign(b, bottleSnap); restoreTank(td, tankSnap); };
+
+  setSaving(btn, true);
+  // Step 1: persist the bottle state (dosing.json), then Step 2: persist the blog (tank_data.js)
+  fetch('save_dosing.php', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(DOSING)})
+    .then(r => r.json())
+    .then(res => {
+      if (!res.ok) throw new Error(res.error || 'dosing save failed');
+      const jsContent = 'const RAW = ' + JSON.stringify(RAW, null, 2) + ';\n';
+      return fetch('save.php', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({content: jsContent})}).then(r => r.json());
+    })
+    .then(res2 => {
+      setSaving(btn, false);
+      if (!res2.ok) throw new Error(res2.error || 'log save failed');
+      rebuildEquipViews();
+      closeFill();
+    })
+    .catch(err => {
+      setSaving(btn, false);
+      rollback();
+      msg.style.color = '#e74c3c';
+      msg.textContent = '✗ Save failed: ' + err.message;
+    });
+}
+
+// ── CONSUMPTION SETTINGS
+function closeConsumptionSettings() { document.getElementById('consumptionModal').classList.remove('open'); }
+
+function openConsumptionSettings() {
+  const c = CONSUMPTION, sm = c.saltMix || {}, ca = c.calc || {}, tk = c.tanks || {};
+  document.getElementById('consumptionMsg').textContent = '';
+  const set = (id, v) => { document.getElementById(id).value = (v === undefined || v === null) ? '' : v; };
+  set('cs_salt_label', sm.label); set('cs_salt_alk', sm.alk); set('cs_salt_ca', sm.ca); set('cs_salt_mg', sm.mg);
+  set('cs_calc_minDays', ca.minDays); set('cs_calc_maxDays', ca.maxDays);
+  set('cs_calc_windowDays', ca.windowDays); set('cs_calc_outlierFactor', ca.outlierFactor);
+  TANK_CONFIGS.forEach(t => {
+    const v = tk[t.key] || {};
+    set('cs_vol_' + t.key, v.volumeGal); set('cs_wc_' + t.key, v.wcVolumeGal);
+  });
+  document.getElementById('consumptionModal').classList.add('open');
+}
+
+function submitConsumptionSettings(btn) {
+  const msg = document.getElementById('consumptionMsg');
+  const num = id => { const x = parseFloat(document.getElementById(id).value); return isNaN(x) ? null : x; };
+  const tanks = {};
+  for (const t of TANK_CONFIGS) {
+    const vol = num('cs_vol_' + t.key), wc = num('cs_wc_' + t.key);
+    if (vol !== null && vol <= 0) { msg.style.color = '#e74c3c'; msg.textContent = `${t.label}: tank volume must be > 0.`; return; }
+    tanks[t.key] = { volumeGal: vol, wcVolumeGal: wc };
+  }
+  const snap = JSON.parse(JSON.stringify(CONSUMPTION));
+  CONSUMPTION.saltMix = { label: document.getElementById('cs_salt_label').value.trim(), alk: num('cs_salt_alk'), ca: num('cs_salt_ca'), mg: num('cs_salt_mg') };
+  CONSUMPTION.calc = { minDays: num('cs_calc_minDays'), maxDays: num('cs_calc_maxDays'), windowDays: num('cs_calc_windowDays'), outlierFactor: num('cs_calc_outlierFactor') };
+  CONSUMPTION.tanks = tanks;
+
+  setSaving(btn, true);
+  fetch('save_consumption.php', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(CONSUMPTION)})
+    .then(r => r.json())
+    .then(res => {
+      setSaving(btn, false);
+      if (res.ok) { rebuildEquipViews(); closeConsumptionSettings(); }
+      else {
+        CONSUMPTION.saltMix = snap.saltMix; CONSUMPTION.calc = snap.calc; CONSUMPTION.tanks = snap.tanks;
+        msg.style.color = '#e74c3c'; msg.textContent = '✗ Server error: ' + res.error;
+      }
+    })
+    .catch(() => {
+      setSaving(btn, false);
+      CONSUMPTION.saltMix = snap.saltMix; CONSUMPTION.calc = snap.calc; CONSUMPTION.tanks = snap.tanks;
+      msg.style.color = '#f39c12'; msg.textContent = '✗ Could not reach server.';
+    });
 }
 
 // ── TAB SWITCHING
