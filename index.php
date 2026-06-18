@@ -822,7 +822,7 @@ tr:last-child td { border:none; }
         <div class="help-card-icon">💉</div>
         <h3>Dosing &amp; Consumption</h3>
         <p>The <strong>Dosing</strong> section records each supplement's daily rate over a date window (use <strong>+ Add</strong>; leave “To” blank for an ongoing dose), manages supplement chemistry under <strong>⚙ Agents</strong>, and tracks each <strong>bottle</strong>: the container size, the volume left (decreasing automatically from the daily dose), and estimated days until empty. Press <strong>⛽ Fill</strong> when you top a bottle up — it records the new volume and adds a Daily Log entry.</p>
-        <p>The <strong>⚖️ Consumption</strong> card shows each parameter's true daily consumption — the observed change corrected for water-change dilution and supplement dosing (All For Reef, Balling B) — averaged over recent intervals. Each interval is flagged <span style="color:#2ecc71">✅ clean</span> (no water change), <span style="color:#f39c12">🟡 corrected</span> (1–2 water changes), or <span style="color:#e74c3c">🔴 noisy</span>. A <strong>⚠</strong> means a water change in that interval had no recorded volume, so its dilution step was skipped (the interval still counts, since a water change moves concentration only slightly). Press <strong>🔍 Verify calc</strong> to expand a panel that shows the full per-contribution math for any interval — each dose and water-change line and how they sum to the rate — for periodic spot-checking. Tune the salt mix, interval rules, and tank volumes with <strong>⚙ Settings</strong> in the ⚖️ Consumption card; Magnesium stays “awaiting data” until you log it.</p>
+        <p>The <strong>⚖️ Consumption</strong> card shows each parameter's true daily consumption — the observed change corrected for water-change dilution and supplement dosing (All For Reef, Balling B) — averaged over recent intervals. Each interval is flagged <span style="color:#2ecc71">✅ clean</span> (no water change), <span style="color:#f39c12">🟡 corrected</span> (1–2 water changes), or <span style="color:#e74c3c">🔴 noisy</span>. A <strong>⚠</strong> means a water change in that interval had no recorded volume, so its dilution step was skipped (the interval still counts, since a water change moves concentration only slightly). Press <strong>🔍 Verify calc</strong> to expand a panel that shows the full per-contribution math for any interval — each dose and water-change line and how they sum to the rate — for periodic spot-checking. The <strong>Consumption Trend</strong> charts below plot each interval's true daily rate over time (one point per water test, at its end date, following the date range above) so you can watch demand trend up or down. Tune the salt mix, interval rules, and tank volumes with <strong>⚙ Settings</strong> in the ⚖️ Consumption card; Magnesium stays “awaiting data” until you log it.</p>
       </div>
 
     </div>
@@ -1092,6 +1092,7 @@ function refreshAllCharts(panelId, tankKey) {
     const data = (td[dataKey] || []).filter(d=>d[cd.key]!==null && d[cd.key]!==undefined);
     makeChart(`chart-${panelId}-${dataKey}`, data, cd.key, cd.color, cd.tMin, cd.tMax, masterLabels);
   });
+  renderConsumptionCharts(panelId, tankKey);
 }
 
 // Date range controls
@@ -1948,6 +1949,7 @@ function buildTankPanel(panelId, tankKey) {
     const data = (td[dataKey] || []).filter(d=>d[cd.key]!==null && d[cd.key]!==undefined);
     makeChart(`chart-${panelId}-${dataKey}`, data, cd.key, cd.color, cd.tMin, cd.tMax, masterLabels);
   });
+  renderConsumptionCharts(panelId, tankKey);
 }
 
 // ── EQUIPMENT HELPERS
@@ -2410,9 +2412,9 @@ function submitTankSettings(btn) {
 
 // ── CONSUMPTION RESULTS (computed on every panel build)
 const CONSUMPTION_PARAMS = [
-  {key:'alk', label:'Alk', unit:'dKH', array:'alk',       valKey:'ALK'},
-  {key:'ca',  label:'Ca',  unit:'ppm', array:'calcium',   valKey:'Calcium'},
-  {key:'mg',  label:'Mg',  unit:'ppm', array:'magnesium', valKey:'Magnesium'},
+  {key:'alk', label:'Alk', unit:'dKH', array:'alk',       valKey:'ALK',       color:'#ffd166'},
+  {key:'ca',  label:'Ca',  unit:'ppm', array:'calcium',   valKey:'Calcium',   color:'#f39c12'},
+  {key:'mg',  label:'Mg',  unit:'ppm', array:'magnesium', valKey:'Magnesium', color:'#14b8a6'},
 ];
 const FLAG_EMOJI = {clean:'✅', corrected:'🟡', noisy:'🔴'};
 
@@ -2452,7 +2454,83 @@ function consumptionHtml(tankKey) {
   h += `<div class="tcard"><table><thead><tr><th>PARAM</th><th>RATE</th><th>N</th><th>LATEST</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   if (!hasDosing) h += `<div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--warn);margin-top:4px;">No dosing configured — rates are not corrected for supplements.</div>`;
   h += `<div id="verifyPanel-${tankKey}" style="display:none;margin-top:8px;"></div>`;
+
+  // Consumption trend charts — one per measured parameter (rendered after innerHTML)
+  const chartParams = CONSUMPTION_PARAMS.filter(p => (td[p.array] || []).filter(r => r[p.valKey] != null).length >= 2);
+  if (chartParams.length) {
+    h += `<div class="slabel" style="margin-top:18px">Consumption Trend <span style="font-weight:400;color:var(--dim);font-size:10px;text-transform:none;letter-spacing:0;">true daily rate per interval (− = consuming)</span></div><div class="chart-grid">`;
+    chartParams.forEach(p => {
+      h += `<div class="ccard"><div class="ccard-title">${p.label} ${p.unit}/day</div><canvas id="consChart-${tankKey}-${p.key}" height="160"></canvas></div>`;
+    });
+    h += `</div>`;
+  }
   return h;
+}
+
+// Render the per-parameter consumption trend charts (called after panel build + on date change).
+function renderConsumptionCharts(panelId, tankKey) {
+  const td = RAW[tankKey];
+  const cc = consumptionCfg();
+  const today = new Date().toISOString().split('T')[0];
+  CONSUMPTION_PARAMS.forEach(p => {
+    const id = `consChart-${tankKey}-${p.key}`;
+    if (!document.getElementById(id)) return;   // canvas only exists when the param has ≥2 readings
+    const readings = (td[p.array] || []).filter(r => r[p.valKey] != null).map(r => ({date: r.date, value: r[p.valKey]}));
+    const allIv = Consumption.computeIntervals({readings, dosing: DOSING, consumption: cc, waterChanges: WATER_CHANGES[tankKey] || [], tank: tankKey, param: p.key});
+    const rr = Consumption.rollingRate(allIv, CONSUMPTION.calc, today);
+    const points = allIv
+      .filter(iv => (!dateFrom || iv.t2 >= dateFrom) && (!dateTo || iv.t2 <= dateTo))
+      .map(iv => ({x: iv.t2, y: iv.rate, flag: iv.flag, incomplete: iv.incomplete, t1: iv.t1, days: iv.days}));
+    makeConsumptionChart(id, points, p.color, p.unit, rr.avgRate);
+  });
+}
+
+// Lightweight rate-over-time chart (one consumption point per interval, at its end date).
+function makeConsumptionChart(id, points, color, unit, avgRate) {
+  if (charts[id]) { try { charts[id].destroy(); } catch(e) {} delete charts[id]; }
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  const existing = Chart.getChart(ctx);
+  if (existing) { try { existing.destroy(); } catch(e) {} }
+
+  const ptColor = points.map(p => p.incomplete ? '#f39c12' : (p.flag === 'noisy' ? '#e74c3c' : color));
+  const annotations = {
+    zero: {type:'line', scaleID:'y', value:0, borderColor:'rgba(255,255,255,0.25)', borderWidth:1, borderDash:[4,3]}
+  };
+  if (avgRate != null) {
+    annotations.avg = {type:'line', scaleID:'y', value:avgRate, borderColor:'rgba(46,204,113,0.55)', borderWidth:1.2, borderDash:[6,3]};
+  }
+
+  charts[id] = new Chart(ctx, {
+    type: 'line',
+    data: { labels: points.map(p => p.x), datasets: [{
+      label: 'rate', data: points.map(p => p.y),
+      borderColor: color, backgroundColor: 'transparent', fill: false,
+      borderWidth: 1.8, tension: 0.3, spanGaps: true,
+      pointRadius: 3, pointHoverRadius: 5,
+      pointBackgroundColor: ptColor, pointBorderColor: ptColor,
+    }]},
+    options: {
+      responsive: true, maintainAspectRatio: true, clip: false,
+      interaction: {mode: 'index', intersect: false},
+      plugins: {
+        legend: {display: false},
+        tooltip: {
+          backgroundColor: '#0a1a30', borderColor: 'rgba(0,212,255,0.2)', borderWidth: 1,
+          titleFont: {family: 'Space Mono', size: 10}, bodyFont: {family: 'DM Sans'},
+          callbacks: { label: item => {
+            const p = points[item.dataIndex];
+            return `${p.y.toFixed(2)} ${unit}/day · ${p.t1}→${p.x} (${p.days}d)${p.incomplete ? ' ⚠' : ''}`;
+          }}
+        },
+        annotation: {annotations}
+      },
+      scales: {
+        x: {grid: {color: 'rgba(255,255,255,0.03)'}, ticks: {maxTicksLimit: 7, font: {family: 'Space Mono', size: 8}, maxRotation: 45, minRotation: 45}},
+        y: {grid: {color: 'rgba(255,255,255,0.03)'}, ticks: {font: {family: 'Space Mono', size: 8}}, position: 'left', grace: '15%'},
+      }
+    }
+  });
 }
 
 // ── CONSUMPTION VERIFICATION PANEL (spot-check the per-contribution math)
