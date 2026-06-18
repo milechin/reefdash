@@ -2285,23 +2285,24 @@ const BOTTLE_LOW_DAYS = 10;   // card turns red at/below this many days left
 // Returns the bottle KPI cards (no heading/grid) so they can sit in the Maintenance row.
 function bottleCardsHtml(tankKey) {
   const today = new Date().toISOString().split('T')[0];
-  const bottles = DOSING.bottles.filter(b => b.tank === tankKey);
-  if (!bottles.length) return '';
+  // One bottle card per agent this tank doses (the bottle entry is created on first Fill).
+  const agents = [...new Set(DOSING.doses.filter(d => d.tank === tankKey).map(d => d.agent))];
+  if (!agents.length) return '';
   let cards = '';
-  bottles.forEach(b => {
-    const idx = DOSING.bottles.indexOf(b);
-    const mlPerDay  = Consumption.activeDose(DOSING.doses, tankKey, b.agent, today);
-    const remaining = Consumption.bottleRemainingMl(b, mlPerDay, today);
+  agents.forEach(agent => {
+    const b = DOSING.bottles.find(x => x.tank === tankKey && x.agent === agent);
+    const mlPerDay  = Consumption.activeDose(DOSING.doses, tankKey, agent, today);
+    const remaining = b ? Consumption.bottleRemainingMl(b, mlPerDay, today) : null;
     const daysLeft  = Consumption.bottleDaysLeft(remaining, mlPerDay);
-    let kc = '#5a8aaa', daysTxt = mlPerDay ? '—' : 'no active dose';
+    let kc = '#5a8aaa', daysTxt = b ? (mlPerDay ? '—' : 'no active dose') : 'not set up';
     if (daysLeft !== null) {
       daysTxt = `${Math.round(daysLeft)} days left`;
       kc = daysLeft <= BOTTLE_LOW_DAYS ? '#e74c3c' : daysLeft <= 20 ? '#f39c12' : '#2ecc71';
     }
     cards += `<div class="kpi" style="--kc:${kc}">
       <div class="kpi-lbl" style="display:flex;justify-content:space-between;align-items:center">
-        <span>${agentLabel(b.agent).toUpperCase()}</span>
-        <button onclick="openFill(${idx})" style="font-family:'Space Mono',monospace;font-size:11px;padding:4px 10px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.4);color:var(--biolume);border-radius:4px;cursor:pointer;letter-spacing:0.5px;">⛽ FILL</button>
+        <span>${agentLabel(agent).toUpperCase()}</span>
+        <button onclick="openFill('${tankKey}','${agent}')" style="font-family:'Space Mono',monospace;font-size:11px;padding:4px 10px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.4);color:var(--biolume);border-radius:4px;cursor:pointer;letter-spacing:0.5px;">⛽ FILL</button>
       </div>
       <div class="kpi-val" style="font-size:22px">${remaining == null ? '—' : Math.round(remaining) + ' mL'}</div>
       <div class="kpi-unit" style="color:${kc}">${daysTxt}</div>
@@ -2310,18 +2311,19 @@ function bottleCardsHtml(tankKey) {
   return cards;
 }
 
-let _fillIdx = null;
+let _fillTank = null, _fillAgent = null;
 
 function closeFill() { document.getElementById('fillModal').classList.remove('open'); }
 
-function openFill(idx) {
-  _fillIdx = idx;
-  const b = DOSING.bottles[idx];
-  document.getElementById('fillAgentLabel').textContent = agentLabel(b.agent);
-  document.getElementById('fillTankLabel').textContent = TANK_NAMES[b.tank] || b.tank;
+function openFill(tankKey, agent) {
+  _fillTank = tankKey;
+  _fillAgent = agent;
+  const b = DOSING.bottles.find(x => x.tank === tankKey && x.agent === agent);
+  document.getElementById('fillAgentLabel').textContent = agentLabel(agent);
+  document.getElementById('fillTankLabel').textContent = TANK_NAMES[tankKey] || tankKey;
   document.getElementById('fillMsg').textContent = '';
-  document.getElementById('fillContainer').value = b.containerVolumeMl ?? '';
-  document.getElementById('fillVolume').value = b.containerVolumeMl ?? '';  // default to a full fill
+  document.getElementById('fillContainer').value = (b && b.containerVolumeMl != null) ? b.containerVolumeMl : '';
+  document.getElementById('fillVolume').value = (b && b.containerVolumeMl != null) ? b.containerVolumeMl : '';  // default to a full fill
   document.getElementById('fillModal').classList.add('open');
 }
 
@@ -2333,20 +2335,27 @@ function submitFill(btn) {
   if (isNaN(container) || container <= 0) { msg.style.color = '#e74c3c'; msg.textContent = 'Enter the container size.'; return; }
 
   const today = new Date().toISOString().split('T')[0];
-  const b = DOSING.bottles[_fillIdx];
-  const bottleSnap = {...b};
+  // Find this tank+agent's bottle, or create one on first fill
+  let b = DOSING.bottles.find(x => x.tank === _fillTank && x.agent === _fillAgent);
+  const created = !b;
+  if (created) { b = {tank: _fillTank, agent: _fillAgent}; DOSING.bottles.push(b); }
+  const bottleSnap = created ? null : {...b};
   b.containerVolumeMl = container;
   b.fillMl = fill;
   b.filledOn = today;
 
   // Daily Log entry for the refill (persisted to tank_data.js)
-  const td = RAW[b.tank];
+  const td = RAW[_fillTank];
   const tankSnap = snapshotTank(td);
   if (!td.blog) td.blog = [];
-  td.blog.push({date: today, text: `Filled ${agentLabel(b.agent)} bottle: ${fill} mL`});
+  td.blog.push({date: today, text: `Filled ${agentLabel(_fillAgent)} bottle: ${fill} mL`});
   td.blog.sort((a, c) => a.date.localeCompare(c.date));
 
-  const rollback = () => { Object.assign(b, bottleSnap); restoreTank(td, tankSnap); };
+  const rollback = () => {
+    if (created) { const i = DOSING.bottles.indexOf(b); if (i >= 0) DOSING.bottles.splice(i, 1); }
+    else { Object.assign(b, bottleSnap); }
+    restoreTank(td, tankSnap);
+  };
 
   setSaving(btn, true);
   // Step 1: persist the bottle state (dosing.json), then Step 2: persist the blog (tank_data.js)
