@@ -1496,6 +1496,13 @@ function submitLogWC(btn) {
     else wc.splice(idx, 0, entry);
   }
 
+  // Mirror the water change into the Daily Log (kept in sync on edit/delete)
+  if (!td.blog) td.blog = [];
+  const wcText = 'Water change' + (volumeGal != null ? ` — ${volumeGal} gal` : '');
+  const bi = td.blog.findIndex(e => e.date === date && e.text.startsWith('Water change'));
+  if (bi >= 0) { td.blog[bi].text = wcText; }
+  else { td.blog.push({date, text: wcText}); td.blog.sort((a, b) => a.date.localeCompare(b.date)); }
+
   const commit = () => {
     // Rebuild panel once to refresh KPI card and charts
     initialized[currentTankKey] = false;
@@ -1541,6 +1548,10 @@ function deleteLogWC(btn) {
   const idx = wc.findIndex(w => w.date === date);
   if (idx === -1) return;
   wc.splice(idx, 1);
+
+  // Remove the mirrored Daily Log entry for this water change
+  const bi = (td.blog || []).findIndex(e => e.date === date && e.text.startsWith('Water change'));
+  if (bi >= 0) td.blog.splice(bi, 1);
 
   const commit = () => {
     initialized[currentTankKey] = false;
