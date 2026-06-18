@@ -462,7 +462,6 @@ tr:last-child td { border:none; }
       </button>
       <div style="width:1px;background:var(--border);height:22px;margin:0 2px"></div>
       <button class="gear-btn" onclick="openTargetEditor()" title="Edit target ranges">⚙ Targets</button>
-      <button class="gear-btn" onclick="openConsumptionSettings()" title="Salt mix, calc, tank volumes">⚙ Consumption</button>
     </div>
   </div>
 
@@ -804,7 +803,7 @@ tr:last-child td { border:none; }
         <div class="help-card-icon">💉</div>
         <h3>Dosing &amp; Consumption</h3>
         <p>The <strong>Dosing</strong> section records each supplement's daily rate over a date window (use <strong>+ Add</strong>; leave “To” blank for an ongoing dose), manages supplement chemistry under <strong>⚙ Agents</strong>, and tracks each <strong>bottle</strong>: the container size, the volume left (decreasing automatically from the daily dose), and estimated days until empty. Press <strong>⛽ Fill</strong> when you top a bottle up — it records the new volume and adds a Daily Log entry.</p>
-        <p>The <strong>⚖️ Consumption</strong> card shows each parameter's true daily consumption — the observed change corrected for water-change dilution and supplement dosing (All For Reef, Balling B) — averaged over recent intervals. Each interval is flagged <span style="color:#2ecc71">✅ clean</span> (no water change), <span style="color:#f39c12">🟡 corrected</span> (1–2 water changes), or <span style="color:#e74c3c">🔴 noisy</span>. A <strong>⚠</strong> means a water change in that interval had no recorded volume, so its dilution step was skipped (the interval still counts, since a water change moves concentration only slightly). Press <strong>🔍 Verify calc</strong> to expand a panel that shows the full per-contribution math for any interval — each dose and water-change line and how they sum to the rate — for periodic spot-checking. Tune the salt mix, interval rules, and tank volumes under <strong>⚙ Consumption</strong>; Magnesium stays “awaiting data” until you log it.</p>
+        <p>The <strong>⚖️ Consumption</strong> card shows each parameter's true daily consumption — the observed change corrected for water-change dilution and supplement dosing (All For Reef, Balling B) — averaged over recent intervals. Each interval is flagged <span style="color:#2ecc71">✅ clean</span> (no water change), <span style="color:#f39c12">🟡 corrected</span> (1–2 water changes), or <span style="color:#e74c3c">🔴 noisy</span>. A <strong>⚠</strong> means a water change in that interval had no recorded volume, so its dilution step was skipped (the interval still counts, since a water change moves concentration only slightly). Press <strong>🔍 Verify calc</strong> to expand a panel that shows the full per-contribution math for any interval — each dose and water-change line and how they sum to the rate — for periodic spot-checking. Tune the salt mix, interval rules, and tank volumes with <strong>⚙ Settings</strong> in the ⚖️ Consumption card; Magnesium stays “awaiting data” until you log it.</p>
       </div>
 
     </div>
@@ -2398,7 +2397,7 @@ function consumptionHtml(tankKey) {
       <td title="${bd}" style="font-family:'Space Mono',monospace;font-size:9px;color:#5a8aaa;cursor:help">${FLAG_EMOJI[iv.flag]} ${iv.rate.toFixed(2)}${warn}</td>
     </tr>`;
   });
-  let h = `<div class="slabel">⚖️ Consumption <span style="font-weight:400;color:var(--dim);font-size:10px;text-transform:none;letter-spacing:0;">${CONSUMPTION.calc.windowDays || 90}-day avg daily rate</span> <button onclick="toggleVerify('${tankKey}')" style="font-family:'Space Mono',monospace;font-size:11px;padding:4px 10px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.35);color:#a78bfa;border-radius:4px;cursor:pointer;letter-spacing:0.5px;text-transform:none;">🔍 Verify calc</button></div>`;
+  let h = `<div class="slabel">⚖️ Consumption <span style="font-weight:400;color:var(--dim);font-size:10px;text-transform:none;letter-spacing:0;">${CONSUMPTION.calc.windowDays || 90}-day avg daily rate</span> <button onclick="toggleVerify('${tankKey}')" style="font-family:'Space Mono',monospace;font-size:11px;padding:4px 10px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.35);color:#a78bfa;border-radius:4px;cursor:pointer;letter-spacing:0.5px;text-transform:none;">🔍 Verify calc</button> <button onclick="openConsumptionSettings()" title="Salt mix, calc, tank volumes" style="font-family:'Space Mono',monospace;font-size:11px;padding:4px 10px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.35);color:var(--biolume);border-radius:4px;cursor:pointer;letter-spacing:0.5px;text-transform:none;">⚙ Settings</button></div>`;
   h += `<div class="tcard"><table><thead><tr><th>PARAM</th><th>RATE</th><th>N</th><th>LATEST</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   if (!hasDosing) h += `<div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--warn);margin-top:4px;">No dosing configured — rates are not corrected for supplements.</div>`;
   h += `<div id="verifyPanel-${tankKey}" style="display:none;margin-top:8px;"></div>`;
