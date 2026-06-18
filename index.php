@@ -522,7 +522,7 @@ tr:last-child td { border:none; }
         <label style="color:var(--text);font-weight:600;">Volume (gal)</label>
         <input type="number" step="0.1" min="0" class="target-num-input" id="logWCVolume" placeholder="tank standard" style="flex:1;max-width:none;border-color:rgba(59,130,246,0.4);">
       </div>
-      <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);margin-bottom:6px;">Blank = use this tank's standard water-change volume.</div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);margin-bottom:6px;">Defaults to your last logged volume. Blank = use the tank's standard.</div>
       <div id="logWCMsg" style="font-family:'Space Mono',monospace;font-size:11px;min-height:18px;margin-top:8px;"></div>
       <div class="modal-footer">
         <button class="btn-reset" onclick="closeLogWC()">Cancel</button>
@@ -705,15 +705,14 @@ tr:last-child td { border:none; }
         <input type="number" step="0.1" class="target-num-input" id="cs_calc_outlierFactor">
       </div>
 
-      <div class="slabel">Tank Volumes (gal)</div>
-      <div style="display:grid;grid-template-columns:1fr 90px 90px;gap:8px;font-family:'Space Mono',monospace;font-size:9px;color:var(--dim);text-align:center;letter-spacing:0.5px;">
-        <span></span><span>TANK&nbsp;(gal)</span><span>WC&nbsp;(gal)</span>
+      <div class="slabel">Tank Volume (gal)</div>
+      <div style="display:grid;grid-template-columns:1fr 90px;gap:8px;font-family:'Space Mono',monospace;font-size:9px;color:var(--dim);text-align:center;letter-spacing:0.5px;">
+        <span></span><span>TOTAL&nbsp;(gal)</span>
       </div>
       <?php foreach ($tanks as $tank): $k = htmlspecialchars($tank['key']); ?>
-      <div class="target-row-edit" style="margin-bottom:8px;gap:8px;">
-        <label style="color:var(--text);font-weight:600;"><?php echo htmlspecialchars($tank['label']); ?></label>
+      <div style="display:grid;grid-template-columns:1fr 90px;gap:8px;align-items:center;padding:6px 0;">
+        <label style="font-size:12px;color:var(--dim);"><?php echo htmlspecialchars($tank['label']); ?></label>
         <input type="number" step="0.1" class="target-num-input" id="cs_vol_<?php echo $k; ?>" title="Total system volume (gallons)" placeholder="total gal">
-        <input type="number" step="0.1" class="target-num-input" id="cs_wc_<?php echo $k; ?>" title="Standard water-change volume (gallons)" placeholder="per WC gal">
       </div>
       <?php endforeach; ?>
 
@@ -1410,10 +1409,17 @@ function openLogWC() {
   function updateDeleteBtn(date) {
     deleteBtn.style.display = date && wcDates.includes(date) ? '' : 'none';
   }
-  // Load the existing per-event volume for a date (blank when none / uses tank standard)
+  // Most recent logged water-change volume for this tank (the default for a new entry)
+  const lastVol = (() => {
+    const withVol = (WATER_CHANGES[currentTankKey] || [])
+      .filter(w => w.volumeGal != null)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    return withVol.length ? withVol[withVol.length - 1].volumeGal : '';
+  })();
+  // Show the entry's own volume when editing one; otherwise default to the last logged volume
   function loadVolume(date) {
     const entry = (WATER_CHANGES[currentTankKey] || []).find(w => w.date === date);
-    document.getElementById('logWCVolume').value = (entry && entry.volumeGal != null) ? entry.volumeGal : '';
+    document.getElementById('logWCVolume').value = (entry && entry.volumeGal != null) ? entry.volumeGal : lastVol;
   }
 
   _logWCFlatpickr = flatpickr('#logWCDate', {
@@ -2323,7 +2329,7 @@ function openConsumptionSettings() {
   set('cs_calc_windowDays', ca.windowDays); set('cs_calc_outlierFactor', ca.outlierFactor);
   TANK_CONFIGS.forEach(t => {
     const v = tk[t.key] || {};
-    set('cs_vol_' + t.key, v.volumeGal); set('cs_wc_' + t.key, v.wcVolumeGal);
+    set('cs_vol_' + t.key, v.volumeGal);
   });
   document.getElementById('consumptionModal').classList.add('open');
 }
@@ -2333,9 +2339,11 @@ function submitConsumptionSettings(btn) {
   const num = id => { const x = parseFloat(document.getElementById(id).value); return isNaN(x) ? null : x; };
   const tanks = {};
   for (const t of TANK_CONFIGS) {
-    const vol = num('cs_vol_' + t.key), wc = num('cs_wc_' + t.key);
+    const vol = num('cs_vol_' + t.key);
     if (vol !== null && vol <= 0) { msg.style.color = '#e74c3c'; msg.textContent = `${t.label}: tank volume must be > 0.`; return; }
-    tanks[t.key] = { volumeGal: vol, wcVolumeGal: wc };
+    // Preserve the existing wcVolumeGal — it's the fallback for water changes logged without a volume
+    const prev = (CONSUMPTION.tanks && CONSUMPTION.tanks[t.key]) || {};
+    tanks[t.key] = { volumeGal: vol, wcVolumeGal: prev.wcVolumeGal };
   }
   const snap = JSON.parse(JSON.stringify(CONSUMPTION));
   CONSUMPTION.saltMix = { label: document.getElementById('cs_salt_label').value.trim(), alk: num('cs_salt_alk'), ca: num('cs_salt_ca'), mg: num('cs_salt_mg') };
