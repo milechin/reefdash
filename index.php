@@ -2249,31 +2249,34 @@ function submitAgents(btn) {
 }
 
 // ── DOSING BOTTLES
+const BOTTLE_LOW_DAYS = 10;   // card turns red at/below this many days left
+
 function bottlesHtml(tankKey) {
   const today = new Date().toISOString().split('T')[0];
   const bottles = DOSING.bottles.filter(b => b.tank === tankKey);
   if (!bottles.length) return '';
-  let h = '<div class="slabel">⛽ Dosing Bottles</div><div class="tcard" style="margin-bottom:20px"><table>'
-    + '<thead><tr><th>BOTTLE</th><th>CONTAINER</th><th>LEFT</th><th>DAYS LEFT</th><th></th></tr></thead><tbody>';
+  let cards = '';
   bottles.forEach(b => {
     const idx = DOSING.bottles.indexOf(b);
     const mlPerDay  = Consumption.activeDose(DOSING.doses, tankKey, b.agent, today);
     const remaining = Consumption.bottleRemainingMl(b, mlPerDay, today);
     const daysLeft  = Consumption.bottleDaysLeft(remaining, mlPerDay);
-    let cls = 'gray', daysTxt = mlPerDay ? '—' : 'no active dose';
+    let kc = '#5a8aaa', daysTxt = mlPerDay ? '—' : 'no active dose';
     if (daysLeft !== null) {
-      daysTxt = `${Math.round(daysLeft)}d`;
-      cls = daysLeft <= 3 ? 'bad' : daysLeft <= 7 ? 'warn' : 'good';
+      daysTxt = `${Math.round(daysLeft)} days left`;
+      kc = daysLeft <= BOTTLE_LOW_DAYS ? '#e74c3c' : daysLeft <= 20 ? '#f39c12' : '#2ecc71';
     }
-    h += `<tr>
-      <td style="font-size:11px">${agentLabel(b.agent)}</td>
-      <td style="font-family:'Space Mono',monospace;font-size:10px;color:#5a8aaa">${b.containerVolumeMl} mL</td>
-      <td style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text)">${remaining == null ? '—' : Math.round(remaining) + ' mL'}</td>
-      <td><span class="chip ${cls}">${daysTxt}</span></td>
-      <td><button class="blog-edit-btn" onclick="openFill(${idx})">⛽ Fill</button></td>
-    </tr>`;
+    cards += `<div class="kpi" style="--kc:${kc}">
+      <div class="kpi-lbl" style="display:flex;justify-content:space-between;align-items:center">
+        <span>${agentLabel(b.agent).toUpperCase()}</span>
+        <button onclick="openFill(${idx})" style="font-family:'Space Mono',monospace;font-size:11px;padding:4px 10px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.4);color:var(--biolume);border-radius:4px;cursor:pointer;letter-spacing:0.5px;">⛽ FILL</button>
+      </div>
+      <div class="kpi-val" style="font-size:22px">${remaining == null ? '—' : Math.round(remaining) + ' mL'}</div>
+      <div class="kpi-unit" style="color:${kc}">${daysTxt}</div>
+    </div>`;
   });
-  return h + '</tbody></table></div>';
+  return '<div class="slabel">⛽ Dosing Bottles</div>'
+    + '<div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:20px">' + cards + '</div>';
 }
 
 let _fillIdx = null;
