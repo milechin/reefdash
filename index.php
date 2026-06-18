@@ -1412,7 +1412,7 @@ function submitLogTest(btn) {
 // ── LOG WATER CHANGE
 let _logWCFlatpickr = null;
 
-function openLogWC() {
+function openLogWC(presetDate) {
   document.getElementById('logWCTankLabel').textContent = TANK_NAMES[currentTankKey] || currentTankKey;
   document.getElementById('logWCMsg').textContent = '';
   document.getElementById('logWCModal').classList.add('open');
@@ -1421,6 +1421,7 @@ function openLogWC() {
 
   const wcDates = (WATER_CHANGES[currentTankKey] || []).map(w => w.date);
   const today = new Date().toISOString().split('T')[0];
+  const initDate = presetDate || today;
 
   const deleteBtn = document.getElementById('logWCDeleteBtn');
   deleteBtn.style.display = 'none';
@@ -1442,7 +1443,7 @@ function openLogWC() {
   }
 
   _logWCFlatpickr = flatpickr('#logWCDate', {
-    defaultDate: today,
+    defaultDate: initDate,
     maxDate: today,
     dateFormat: 'Y-m-d',
     onDayCreate(dObj, dStr, fp, dayElem) {
@@ -1459,8 +1460,8 @@ function openLogWC() {
     }
   });
 
-  updateDeleteBtn(today);
-  loadVolume(today);
+  updateDeleteBtn(initDate);
+  loadVolume(initDate);
 }
 
 function closeLogWC() {
@@ -1495,13 +1496,6 @@ function submitLogWC(btn) {
     if (idx === -1) wc.push(entry);
     else wc.splice(idx, 0, entry);
   }
-
-  // Mirror the water change into the Daily Log (kept in sync on edit/delete)
-  if (!td.blog) td.blog = [];
-  const wcText = 'Water change' + (volumeGal != null ? ` — ${volumeGal} gal` : '');
-  const bi = td.blog.findIndex(e => e.date === date && e.text.startsWith('Water change'));
-  if (bi >= 0) { td.blog[bi].text = wcText; }
-  else { td.blog.push({date, text: wcText}); td.blog.sort((a, b) => a.date.localeCompare(b.date)); }
 
   const commit = () => {
     // Rebuild panel once to refresh KPI card and charts
@@ -1548,10 +1542,6 @@ function deleteLogWC(btn) {
   const idx = wc.findIndex(w => w.date === date);
   if (idx === -1) return;
   wc.splice(idx, 1);
-
-  // Remove the mirrored Daily Log entry for this water change
-  const bi = (td.blog || []).findIndex(e => e.date === date && e.text.startsWith('Water change'));
-  if (bi >= 0) td.blog.splice(bi, 1);
 
   const commit = () => {
     initialized[currentTankKey] = false;
@@ -1895,18 +1885,30 @@ function buildTankPanel(panelId, tankKey) {
   });
   chartHtml += '</div>';
 
-  // Blog section
-  const blogEntries = (td.blog || []).slice().sort((a,b) => b.date.localeCompare(a.date));
+  // Daily Log — assembled dynamically from each source's own store (no duplicated data):
+  //   • notes  → td.blog (user free-text; includes bottle-fill entries)
+  //   • water changes → derived from td.waterChanges
+  const esc = s => s.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const logItems = [];
+  (td.blog || []).forEach(e => {
+    if (/^Water change/.test(e.text)) return;   // ignore any legacy mirrored entries — now derived below
+    logItems.push({date: e.date, html: esc(e.text), edit: `<button class="blog-edit-btn" onclick="openBlog('${e.date}')">✎ Edit</button>`});
+  });
+  (td.waterChanges || []).forEach(w => {
+    logItems.push({date: w.date, html: `💧 Water change${w.volumeGal != null ? ` — ${w.volumeGal} gal` : ''}`, edit: `<button class="blog-edit-btn" onclick="openLogWC('${w.date}')">✎ Edit</button>`});
+  });
+  logItems.sort((a,b) => b.date.localeCompare(a.date));   // newest first
+
   let blogHtml = `<div class="slabel">Daily Log <button onclick="openBlog()" style="font-family:'Space Mono',monospace;font-size:11px;padding:4px 10px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.35);color:#a78bfa;border-radius:4px;cursor:pointer;letter-spacing:0.5px;text-transform:none;">+ Add Entry</button></div>`
     + '<div class="tcard">';
-  if (blogEntries.length === 0) {
+  if (logItems.length === 0) {
     blogHtml += '<div class="blog-empty">No entries yet.</div>';
   } else {
-    blogEntries.forEach(e => {
+    logItems.forEach(it => {
       blogHtml += `<div class="blog-entry">
-        <div class="blog-date">${e.date}</div>
-        <div class="blog-text">${e.text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-        <button class="blog-edit-btn" onclick="openBlog('${e.date}')">✎ Edit</button>
+        <div class="blog-date">${it.date}</div>
+        <div class="blog-text">${it.html}</div>
+        ${it.edit}
       </div>`;
     });
   }
