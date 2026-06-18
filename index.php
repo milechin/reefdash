@@ -1847,6 +1847,7 @@ function buildTankPanel(panelId, tankKey) {
   // KPIs
   let kpiHtml = '<div class="slabel">Maintenance</div>'
     + '<div class="kpi-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:20px">' + wcCard + testCard + '</div>'
+    + bottlesHtml(tankKey)
     + '<div class="slabel">Current Parameters <button onclick="openLogTest()" style="font-family:\'Space Mono\',monospace;font-size:11px;padding:4px 10px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.35);color:var(--biolume);border-radius:4px;cursor:pointer;letter-spacing:0.5px;text-transform:none;">+ Log Test</button></div><div class="kpi-grid">';
   const kpiLastDate = td.latest && td.latest.lastDate;
   KPI_DEFS.forEach(k=>{
@@ -1923,7 +1924,6 @@ function buildTankPanel(panelId, tankKey) {
     tankDoses.forEach(d => { dosingHtml += dosingRowHtml(d, DOSING.doses.indexOf(d)); });
     dosingHtml += '</tbody></table></div>';
   }
-  dosingHtml += bottlesHtml(tankKey);
 
   // Rescue dateBar before innerHTML wipe (it may currently be a child of this panel)
   const dateBarEl = document.getElementById('dateBar');
@@ -2253,7 +2253,7 @@ function bottlesHtml(tankKey) {
   const today = new Date().toISOString().split('T')[0];
   const bottles = DOSING.bottles.filter(b => b.tank === tankKey);
   if (!bottles.length) return '';
-  let h = '<div class="tcard" style="margin-top:8px"><table>'
+  let h = '<div class="slabel">⛽ Dosing Bottles</div><div class="tcard" style="margin-bottom:20px"><table>'
     + '<thead><tr><th>BOTTLE</th><th>CONTAINER</th><th>LEFT</th><th>DAYS LEFT</th><th></th></tr></thead><tbody>';
   bottles.forEach(b => {
     const idx = DOSING.bottles.indexOf(b);
