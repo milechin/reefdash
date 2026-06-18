@@ -700,11 +700,14 @@ tr:last-child td { border:none; }
       </div>
 
       <div class="slabel">Tank Volumes (gal)</div>
+      <div style="display:grid;grid-template-columns:1fr 90px 90px;gap:8px;font-family:'Space Mono',monospace;font-size:9px;color:var(--dim);text-align:center;letter-spacing:0.5px;">
+        <span></span><span>TANK&nbsp;VOL</span><span>WATER&nbsp;CHANGE</span>
+      </div>
       <?php foreach ($tanks as $tank): $k = htmlspecialchars($tank['key']); ?>
       <div class="target-row-edit" style="margin-bottom:8px;gap:8px;">
         <label style="color:var(--text);font-weight:600;"><?php echo htmlspecialchars($tank['label']); ?></label>
-        <input type="number" step="0.1" class="target-num-input" id="cs_vol_<?php echo $k; ?>" placeholder="tank gal">
-        <input type="number" step="0.1" class="target-num-input" id="cs_wc_<?php echo $k; ?>" placeholder="WC gal">
+        <input type="number" step="0.1" class="target-num-input" id="cs_vol_<?php echo $k; ?>" title="Total system volume (gallons)" placeholder="total gal">
+        <input type="number" step="0.1" class="target-num-input" id="cs_wc_<?php echo $k; ?>" title="Standard water-change volume (gallons)" placeholder="per WC gal">
       </div>
       <?php endforeach; ?>
 
