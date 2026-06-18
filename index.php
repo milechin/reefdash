@@ -679,29 +679,35 @@ tr:last-child td { border:none; }
       </div>
 
       <div class="slabel" style="margin-top:4px">Salt Mix</div>
-      <div class="target-row-edit" style="margin-bottom:8px;">
+      <div class="target-row-edit" style="margin-bottom:6px;">
         <label style="color:var(--text);font-weight:600;">Label</label>
-        <input type="text" class="target-num-input" id="cs_salt_label" style="flex:1;max-width:none;">
+        <input type="text" class="target-num-input" id="cs_salt_label" style="grid-column:2 / -1;text-align:left;">
       </div>
-      <div class="target-row-edit" style="margin-bottom:10px;gap:8px;">
-        <label style="color:var(--text);font-weight:600;">Alk / Ca / Mg</label>
-        <input type="number" step="0.1" class="target-num-input" id="cs_salt_alk" placeholder="dKH">
-        <input type="number" step="1"   class="target-num-input" id="cs_salt_ca"  placeholder="ppm">
-        <input type="number" step="1"   class="target-num-input" id="cs_salt_mg"  placeholder="ppm">
+      <div style="display:grid;grid-template-columns:1fr 90px 90px 90px;gap:8px;font-family:'Space Mono',monospace;font-size:9px;color:var(--dim);text-align:center;letter-spacing:0.5px;">
+        <span></span><span>ALK&nbsp;(dKH)</span><span>CA&nbsp;(ppm)</span><span>MG&nbsp;(ppm)</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 90px 90px 90px;gap:8px;align-items:center;padding:6px 0 10px;">
+        <label style="font-size:12px;color:var(--dim);">Mix values</label>
+        <input type="number" step="0.1" class="target-num-input" id="cs_salt_alk">
+        <input type="number" step="1"   class="target-num-input" id="cs_salt_ca">
+        <input type="number" step="1"   class="target-num-input" id="cs_salt_mg">
       </div>
 
       <div class="slabel">Calc Parameters</div>
-      <div class="target-row-edit" style="margin-bottom:10px;gap:8px;">
-        <label style="color:var(--text);font-weight:600;">min / max / window / outlier×</label>
-        <input type="number" step="1" class="target-num-input" id="cs_calc_minDays"  placeholder="min d">
-        <input type="number" step="1" class="target-num-input" id="cs_calc_maxDays"  placeholder="max d">
-        <input type="number" step="1" class="target-num-input" id="cs_calc_windowDays" placeholder="window d">
-        <input type="number" step="0.1" class="target-num-input" id="cs_calc_outlierFactor" placeholder="×">
+      <div style="display:grid;grid-template-columns:1fr 66px 66px 66px 66px;gap:8px;font-family:'Space Mono',monospace;font-size:9px;color:var(--dim);text-align:center;letter-spacing:0.5px;">
+        <span></span><span>MIN&nbsp;(d)</span><span>MAX&nbsp;(d)</span><span>WINDOW&nbsp;(d)</span><span>OUTLIER&nbsp;(×)</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 66px 66px 66px 66px;gap:8px;align-items:center;padding:6px 0 10px;">
+        <label style="font-size:12px;color:var(--dim);">Interval rules</label>
+        <input type="number" step="1" class="target-num-input" id="cs_calc_minDays">
+        <input type="number" step="1" class="target-num-input" id="cs_calc_maxDays">
+        <input type="number" step="1" class="target-num-input" id="cs_calc_windowDays">
+        <input type="number" step="0.1" class="target-num-input" id="cs_calc_outlierFactor">
       </div>
 
       <div class="slabel">Tank Volumes (gal)</div>
       <div style="display:grid;grid-template-columns:1fr 90px 90px;gap:8px;font-family:'Space Mono',monospace;font-size:9px;color:var(--dim);text-align:center;letter-spacing:0.5px;">
-        <span></span><span>TANK&nbsp;VOL</span><span>WATER&nbsp;CHANGE</span>
+        <span></span><span>TANK&nbsp;(gal)</span><span>WC&nbsp;(gal)</span>
       </div>
       <?php foreach ($tanks as $tank): $k = htmlspecialchars($tank['key']); ?>
       <div class="target-row-edit" style="margin-bottom:8px;gap:8px;">
