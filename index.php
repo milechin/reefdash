@@ -1797,6 +1797,49 @@ function maintBadge(days) {
 }
 const statusText = {good:'● In Range', warn:'▼ Low', bad:'▲ High'};
 
+// Daily Log assembled dynamically from each source's own store (no duplicated data):
+//   • notes → td.blog (user free-text; includes bottle-fill entries)
+//   • water changes → derived from td.waterChanges
+function assembleDailyLog(tankKey) {
+  const td = RAW[tankKey];
+  const esc = s => s.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const items = [];
+  (td.blog || []).forEach(e => {
+    if (/^Water change/.test(e.text)) return;   // legacy mirrored entries — now derived below
+    items.push({date: e.date, html: esc(e.text), edit: `<button class="blog-edit-btn" onclick="openBlog('${e.date}')">✎ Edit</button>`});
+  });
+  (td.waterChanges || []).forEach(w => {
+    items.push({date: w.date, html: `💧 Water change${w.volumeGal != null ? ` — ${w.volumeGal} gal` : ''}`, edit: `<button class="blog-edit-btn" onclick="openLogWC('${w.date}')">✎ Edit</button>`});
+  });
+  return items.sort((a,b) => b.date.localeCompare(a.date));   // newest first
+}
+
+const DAILY_LOG_PAGE_SIZE = 12;
+
+function renderDailyLog(tankKey, page) {
+  const container = document.getElementById('dailyLog-' + tankKey);
+  if (!container) return;
+  const items = assembleDailyLog(tankKey);
+  if (!items.length) { container.innerHTML = '<div class="blog-empty">No entries yet.</div>'; return; }
+  const pages = Math.ceil(items.length / DAILY_LOG_PAGE_SIZE);
+  page = Math.max(0, Math.min(page || 0, pages - 1));
+  const slice = items.slice(page * DAILY_LOG_PAGE_SIZE, (page + 1) * DAILY_LOG_PAGE_SIZE);
+  let h = slice.map(it => `<div class="blog-entry">
+      <div class="blog-date">${it.date}</div>
+      <div class="blog-text">${it.html}</div>
+      ${it.edit}
+    </div>`).join('');
+  if (pages > 1) {
+    const btn = (label, target, disabled) => `<button class="blog-edit-btn" ${disabled ? 'disabled style="opacity:0.35;cursor:default"' : `onclick="renderDailyLog('${tankKey}',${target})"`}>${label}</button>`;
+    h += `<div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 0 2px;font-family:'Space Mono',monospace;font-size:10px;color:var(--dim)">
+      ${btn('‹ Newer', page - 1, page === 0)}
+      <span>page ${page + 1} / ${pages} · ${items.length} entries</span>
+      ${btn('Older ›', page + 1, page === pages - 1)}
+    </div>`;
+  }
+  container.innerHTML = h;
+}
+
 function buildTankPanel(panelId, tankKey) {
   const panel = document.getElementById('panel-'+panelId);
   if (!panel) return;
@@ -1885,34 +1928,9 @@ function buildTankPanel(panelId, tankKey) {
   });
   chartHtml += '</div>';
 
-  // Daily Log — assembled dynamically from each source's own store (no duplicated data):
-  //   • notes  → td.blog (user free-text; includes bottle-fill entries)
-  //   • water changes → derived from td.waterChanges
-  const esc = s => s.replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const logItems = [];
-  (td.blog || []).forEach(e => {
-    if (/^Water change/.test(e.text)) return;   // ignore any legacy mirrored entries — now derived below
-    logItems.push({date: e.date, html: esc(e.text), edit: `<button class="blog-edit-btn" onclick="openBlog('${e.date}')">✎ Edit</button>`});
-  });
-  (td.waterChanges || []).forEach(w => {
-    logItems.push({date: w.date, html: `💧 Water change${w.volumeGal != null ? ` — ${w.volumeGal} gal` : ''}`, edit: `<button class="blog-edit-btn" onclick="openLogWC('${w.date}')">✎ Edit</button>`});
-  });
-  logItems.sort((a,b) => b.date.localeCompare(a.date));   // newest first
-
+  // Daily Log — assembled + paginated by renderDailyLog() after innerHTML (container below)
   let blogHtml = `<div class="slabel">Daily Log <button onclick="openBlog()" style="font-family:'Space Mono',monospace;font-size:11px;padding:4px 10px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.35);color:#a78bfa;border-radius:4px;cursor:pointer;letter-spacing:0.5px;text-transform:none;">+ Add Entry</button></div>`
-    + '<div class="tcard">';
-  if (logItems.length === 0) {
-    blogHtml += '<div class="blog-empty">No entries yet.</div>';
-  } else {
-    logItems.forEach(it => {
-      blogHtml += `<div class="blog-entry">
-        <div class="blog-date">${it.date}</div>
-        <div class="blog-text">${it.html}</div>
-        ${it.edit}
-      </div>`;
-    });
-  }
-  blogHtml += '</div>';
+    + `<div class="tcard" id="dailyLog-${tankKey}"></div>`;
 
   // Equipment section
   const tankEquip = EQUIPMENT_RAW.filter(e => e.tank === tankKey);
@@ -1962,6 +1980,7 @@ function buildTankPanel(panelId, tankKey) {
     makeChart(`chart-${panelId}-${dataKey}`, data, cd.key, cd.color, cd.tMin, cd.tMax, masterLabels);
   });
   renderConsumptionCharts(panelId, tankKey);
+  renderDailyLog(tankKey, 0);
 }
 
 // ── EQUIPMENT HELPERS
