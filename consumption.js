@@ -25,11 +25,6 @@
     const v = consumption && consumption.tanks && consumption.tanks[tank] && consumption.tanks[tank].volumeGal;
     return v ? v * GAL_TO_L : null;
   }
-  function wcFraction(consumption, tank) {
-    const t = (consumption && consumption.tanks && consumption.tanks[tank]) || {};
-    return (t.volumeGal && t.wcVolumeGal != null) ? t.wcVolumeGal / t.volumeGal : null;
-  }
-
   // ── §5.2/5.3 dosing ──────────────────────────────────────────────────────
   // mL of `agent` dosed into `tank` during (t1, t2], summed over matching dose windows.
   // A window [from, to||t2] contributes mlPerDay for each day d with t1 < d <= t2 and from <= d <= to.
@@ -47,38 +42,52 @@
     return ml;
   }
 
-  // Per-agent contribution to `param` (alk/ca/mg) over the interval, keyed by agent.
-  function agentContributions(dosing, consumption, tank, param, t1, t2) {
+  // Per-agent dose detail for `param` over the interval (for the verification breakdown).
+  function agentDoses(dosing, consumption, tank, param, t1, t2) {
     const volL = tankVolumeL(consumption, tank);
-    const out = {};
+    const out = [];
     if (!volL || !dosing) return out;
     for (const [key, agent] of Object.entries(dosing.agents || {})) {
       const perMl = agent && agent.perMl && agent.perMl[param];
       if (perMl == null) continue;
-      const ml = doseMlInInterval(dosing.doses || [], tank, key, t1, t2);
-      if (ml > 0) out[key] = ml * perMl / volL;
+      const mlDosed = doseMlInInterval(dosing.doses || [], tank, key, t1, t2);
+      if (mlDosed <= 0) continue;
+      out.push({ agent: key, label: agent.label || key, mlDosed, perMl, perMlPerL: perMl / volL, contribution: mlDosed * perMl / volL });
     }
     return out;
   }
 
+  // Convenience map { agent: contribution } over agentDoses.
+  function agentContributions(dosing, consumption, tank, param, t1, t2) {
+    const out = {};
+    for (const d of agentDoses(dosing, consumption, tank, param, t1, t2)) out[d.agent] = d.contribution;
+    return out;
+  }
+
   // ── §5.4 water-change contribution ───────────────────────────────────────
+  // A water change with no recorded volume is SKIPPED (not estimated) and reported in `skipped`,
+  // so the interval can be flagged; its dilution step is simply not computed.
   function wcContribution(consumption, waterChanges, tank, param, P1, P2, t1, t2) {
     const tcfg = (consumption.tanks && consumption.tanks[tank]) || {};
-    const stdFrac = wcFraction(consumption, tank);
     const salt = consumption.saltMix && consumption.saltMix[param];
-    if (salt == null) return { total: 0, count: 0 };
     const span = daysBetween(t1, t2);
-    let total = 0, count = 0;
+    let total = 0, count = 0, skipped = 0;
+    const items = [];
     for (const w of (waterChanges || [])) {
       if (w.date <= t1 || w.date > t2) continue;           // (t1, t2]
       const f = span ? daysBetween(t1, w.date) / span : 0;
       const pAt = P1 + (P2 - P1) * f;                       // linear interpolation
-      let frac = (w.volumeGal != null && tcfg.volumeGal) ? w.volumeGal / tcfg.volumeGal : stdFrac;
-      if (frac == null) continue;
-      total += (salt - pAt) * frac;
-      count++;
+      if (w.volumeGal == null || !tcfg.volumeGal || salt == null) {
+        skipped++;
+        items.push({ date: w.date, pAtWc: pAt, volumeGal: w.volumeGal, fraction: null, delta: 0, accounted: false });
+        continue;
+      }
+      const fraction = w.volumeGal / tcfg.volumeGal;
+      const delta = (salt - pAt) * fraction;
+      total += delta; count++;
+      items.push({ date: w.date, pAtWc: pAt, volumeGal: w.volumeGal, fraction, delta, accounted: true });
     }
-    return { total, count };
+    return { total, count, skipped, items };
   }
 
   // ── §5.5–5.6 intervals ───────────────────────────────────────────────────
@@ -93,15 +102,16 @@
       const days = daysBetween(t1, t2);
       if (days <= 0) continue;
       const observed = P2 - P1;
-      const agents = agentContributions(dosing, consumption, tank, param, t1, t2);
-      const agentTotal = Object.values(agents).reduce((a, b) => a + b, 0);
+      const doses = agentDoses(dosing, consumption, tank, param, t1, t2);
+      const doseTotal = doses.reduce((a, d) => a + d.contribution, 0);
       const wc = wcContribution(consumption, waterChanges, tank, param, P1, P2, t1, t2);
-      const trueConsumption = observed - agentTotal - wc.total;
+      const trueConsumption = observed - doseTotal - wc.total;
+      const events = wc.count + wc.skipped;
       let flag;
-      if (days < 3 || days > maxDays || wc.count > 2) flag = 'noisy';
-      else if (wc.count === 0) flag = 'clean';
+      if (days < 3 || days > maxDays || events > 2) flag = 'noisy';
+      else if (events === 0) flag = 'clean';
       else flag = 'corrected';
-      out.push({ t1, t2, days, observed, agents, agentTotal, wc: wc.total, wcCount: wc.count, trueConsumption, rate: trueConsumption / days, flag });
+      out.push({ t1, t2, days, P1, P2, observed, doses, doseTotal, wcItems: wc.items, wcTotal: wc.total, wcCount: wc.count, wcSkipped: wc.skipped, incomplete: wc.skipped > 0, trueConsumption, rate: trueConsumption / days, flag });
     }
     return out;
   }
@@ -146,8 +156,8 @@
 
   const api = {
     GAL_TO_L, daysBetween, addDays,
-    tankVolumeL, wcFraction,
-    doseMlInInterval, agentContributions, wcContribution,
+    tankVolumeL,
+    doseMlInInterval, agentDoses, agentContributions, wcContribution,
     computeIntervals, rollingRate,
     activeDose, bottleRemainingMl, bottleDaysLeft,
   };

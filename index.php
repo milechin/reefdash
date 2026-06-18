@@ -522,7 +522,7 @@ tr:last-child td { border:none; }
         <label style="color:var(--text);font-weight:600;">Volume (gal)</label>
         <input type="number" step="0.1" min="0" class="target-num-input" id="logWCVolume" placeholder="tank standard" style="flex:1;max-width:none;border-color:rgba(59,130,246,0.4);">
       </div>
-      <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);margin-bottom:6px;">Defaults to your last logged volume. Blank = use the tank's standard.</div>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);margin-bottom:6px;">Defaults to your last logged volume. Blank = not counted in the consumption calc.</div>
       <div id="logWCMsg" style="font-family:'Space Mono',monospace;font-size:11px;min-height:18px;margin-top:8px;"></div>
       <div class="modal-footer">
         <button class="btn-reset" onclick="closeLogWC()">Cancel</button>
@@ -804,7 +804,7 @@ tr:last-child td { border:none; }
         <div class="help-card-icon">💉</div>
         <h3>Dosing &amp; Consumption</h3>
         <p>The <strong>Dosing</strong> section records each supplement's daily rate over a date window (use <strong>+ Add</strong>; leave “To” blank for an ongoing dose), manages supplement chemistry under <strong>⚙ Agents</strong>, and tracks each <strong>bottle</strong>: the container size, the volume left (decreasing automatically from the daily dose), and estimated days until empty. Press <strong>⛽ Fill</strong> when you top a bottle up — it records the new volume and adds a Daily Log entry.</p>
-        <p>The <strong>⚖️ Consumption</strong> card shows each parameter's true daily consumption — the observed change corrected for water-change dilution and supplement dosing (All For Reef, Balling B) — averaged over recent clean intervals. Each interval is flagged <span style="color:#2ecc71">✅ clean</span> (no water change), <span style="color:#f39c12">🟡 corrected</span> (1–2, fully accounted), or <span style="color:#e74c3c">🔴 noisy</span>. Tune the salt mix, interval rules, and tank volumes under <strong>⚙ Consumption</strong>; Magnesium stays “awaiting data” until you log it.</p>
+        <p>The <strong>⚖️ Consumption</strong> card shows each parameter's true daily consumption — the observed change corrected for water-change dilution and supplement dosing (All For Reef, Balling B) — averaged over recent intervals. Each interval is flagged <span style="color:#2ecc71">✅ clean</span> (no water change), <span style="color:#f39c12">🟡 corrected</span> (1–2 water changes), or <span style="color:#e74c3c">🔴 noisy</span>. A <strong>⚠</strong> means a water change in that interval had no recorded volume, so its dilution step was skipped (the interval still counts, since a water change moves concentration only slightly). Press <strong>🔍 Verify calc</strong> to expand a panel that shows the full per-contribution math for any interval — each dose and water-change line and how they sum to the rate — for periodic spot-checking. Tune the salt mix, interval rules, and tank volumes under <strong>⚙ Consumption</strong>; Magnesium stays “awaiting data” until you log it.</p>
       </div>
 
     </div>
@@ -2341,9 +2341,7 @@ function submitConsumptionSettings(btn) {
   for (const t of TANK_CONFIGS) {
     const vol = num('cs_vol_' + t.key);
     if (vol !== null && vol <= 0) { msg.style.color = '#e74c3c'; msg.textContent = `${t.label}: tank volume must be > 0.`; return; }
-    // Preserve the existing wcVolumeGal — it's the fallback for water changes logged without a volume
-    const prev = (CONSUMPTION.tanks && CONSUMPTION.tanks[t.key]) || {};
-    tanks[t.key] = { volumeGal: vol, wcVolumeGal: prev.wcVolumeGal };
+    tanks[t.key] = { volumeGal: vol };
   }
   const snap = JSON.parse(JSON.stringify(CONSUMPTION));
   CONSUMPTION.saltMix = { label: document.getElementById('cs_salt_label').value.trim(), alk: num('cs_salt_alk'), ca: num('cs_salt_ca'), mg: num('cs_salt_mg') };
@@ -2391,18 +2389,90 @@ function consumptionHtml(tankKey) {
     const rr = Consumption.rollingRate(intervals, CONSUMPTION.calc, today);
     if (rr.avgRate === null) { rows += blank('no qualifying intervals'); return; }
     const iv = rr.latest;
-    const bd = `latest ${iv.t1}→${iv.t2} (${iv.days}d): observed ${iv.observed.toFixed(2)}, −dose ${iv.agentTotal.toFixed(2)}, −WC ${iv.wc.toFixed(2)} = ${iv.trueConsumption.toFixed(2)}`;
+    const warn = iv.incomplete ? ' ⚠' : '';
+    const bd = `latest ${iv.t1}→${iv.t2} (${iv.days}d): observed ${iv.observed.toFixed(2)}, −dose ${iv.doseTotal.toFixed(2)}, −WC ${iv.wcTotal.toFixed(2)} = ${iv.trueConsumption.toFixed(2)}${iv.incomplete ? ' (a water change had no volume — skipped)' : ''}`;
     rows += `<tr>
       <td style="font-size:11px">${p.label}</td>
       <td style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text)">${rr.avgRate.toFixed(2)} ${p.unit}/day</td>
       <td style="font-family:'Space Mono',monospace;font-size:9px;color:#5a8aaa">${rr.n}×</td>
-      <td title="${bd}" style="font-family:'Space Mono',monospace;font-size:9px;color:#5a8aaa;cursor:help">${FLAG_EMOJI[iv.flag]} ${iv.rate.toFixed(2)}</td>
+      <td title="${bd}" style="font-family:'Space Mono',monospace;font-size:9px;color:#5a8aaa;cursor:help">${FLAG_EMOJI[iv.flag]} ${iv.rate.toFixed(2)}${warn}</td>
     </tr>`;
   });
-  let h = `<div class="slabel">⚖️ Consumption <span style="font-weight:400;color:var(--dim);font-size:10px;text-transform:none;letter-spacing:0;">${CONSUMPTION.calc.windowDays || 90}-day avg daily rate</span></div>`;
+  let h = `<div class="slabel">⚖️ Consumption <span style="font-weight:400;color:var(--dim);font-size:10px;text-transform:none;letter-spacing:0;">${CONSUMPTION.calc.windowDays || 90}-day avg daily rate</span> <button onclick="toggleVerify('${tankKey}')" style="font-family:'Space Mono',monospace;font-size:11px;padding:4px 10px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.35);color:#a78bfa;border-radius:4px;cursor:pointer;letter-spacing:0.5px;text-transform:none;">🔍 Verify calc</button></div>`;
   h += `<div class="tcard"><table><thead><tr><th>PARAM</th><th>RATE</th><th>N</th><th>LATEST</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   if (!hasDosing) h += `<div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--warn);margin-top:4px;">No dosing configured — rates are not corrected for supplements.</div>`;
+  h += `<div id="verifyPanel-${tankKey}" style="display:none;margin-top:8px;"></div>`;
   return h;
+}
+
+// ── CONSUMPTION VERIFICATION PANEL (spot-check the per-contribution math)
+function toggleVerify(tankKey) {
+  const panel = document.getElementById('verifyPanel-' + tankKey);
+  if (!panel) return;
+  if (panel.style.display === 'none') { panel.style.display = 'block'; renderVerifyPanel(tankKey); }
+  else { panel.style.display = 'none'; }
+}
+
+function renderVerifyPanel(tankKey) {
+  const alk = (RAW[tankKey].alk || []).filter(r => r.ALK != null).map(r => ({date: r.date, value: r.ALK}));
+  const ivs = Consumption.computeIntervals({readings: alk, dosing: DOSING, consumption: CONSUMPTION, waterChanges: WATER_CHANGES[tankKey] || [], tank: tankKey, param: 'alk'});
+  const panel = document.getElementById('verifyPanel-' + tankKey);
+  if (!ivs.length) { panel.innerHTML = `<div class="tcard" style="padding:10px;font-family:'Space Mono',monospace;font-size:11px;color:var(--dim)">Not enough water tests to verify (need ≥2 Alk readings).</div>`; return; }
+  const recent = ivs.slice(-24).reverse();  // newest first
+  panel.innerHTML = `<div class="tcard" style="padding:10px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);">INTERVAL</span>
+      <select id="verifySel-${tankKey}" class="target-num-input" style="max-width:none;flex:1;text-align:left;cursor:pointer;" onchange="onVerifySelect('${tankKey}')">
+        ${recent.map(iv => `<option value="${iv.t1}|${iv.t2}">${iv.t1} → ${iv.t2} (${iv.days}d)${iv.incomplete ? ' ⚠ WC volume missing' : ''}</option>`).join('')}
+      </select>
+    </div>
+    <div id="verifyBody-${tankKey}"></div>
+  </div>`;
+  selectVerifyInterval(tankKey, recent[0].t1, recent[0].t2);
+}
+
+function onVerifySelect(tankKey) {
+  const [t1, t2] = document.getElementById('verifySel-' + tankKey).value.split('|');
+  selectVerifyInterval(tankKey, t1, t2);
+}
+
+function selectVerifyInterval(tankKey, t1, t2) {
+  const td = RAW[tankKey];
+  const wc = WATER_CHANGES[tankKey] || [];
+  const volL = Consumption.tankVolumeL(CONSUMPTION, tankKey);
+  const n3 = x => (x == null ? '—' : (+x).toFixed(3));
+  const n2 = x => (x == null ? '—' : (+x).toFixed(2));
+  const cell = "font-family:'Space Mono',monospace;font-size:9px;padding:2px 5px;text-align:center;";
+  const lcell = cell.replace('center', 'left');
+  let html = `<div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);margin-bottom:6px;">Tank volume: ${volL ? volL.toFixed(1) + ' L' : 'not set'}</div>`;
+  CONSUMPTION_PARAMS.forEach(p => {
+    const at = d => { const r = (td[p.array] || []).find(x => x.date === d && x[p.valKey] != null); return r ? r[p.valKey] : null; };
+    const P1 = at(t1), P2 = at(t2);
+    if (P1 == null || P2 == null) {
+      html += `<div style="margin:8px 0;font-size:11px"><strong>${p.label}</strong> <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim)">— no reading at both test dates</span></div>`;
+      return;
+    }
+    const iv = Consumption.computeIntervals({readings: [{date:t1,value:P1},{date:t2,value:P2}], dosing: DOSING, consumption: CONSUMPTION, waterChanges: wc, tank: tankKey, param: p.key})[0];
+    const doseRows = iv.doses.length
+      ? iv.doses.map(d => `<tr><td style="${lcell}">${d.label}</td><td style="${cell}">${n2(d.mlDosed)}</td><td style="${cell}">${n3(d.perMl)}</td><td style="${cell}">${n3(d.perMlPerL)}</td><td style="${cell}">${n3(d.contribution)}</td></tr>`).join('')
+      : `<tr><td colspan="5" style="${lcell}color:var(--dim)">no dosing in interval</td></tr>`;
+    const wcRows = iv.wcItems.length
+      ? iv.wcItems.map(w => w.accounted
+          ? `<tr><td style="${lcell}">${w.date}</td><td style="${cell}">${n2(w.pAtWc)}</td><td style="${cell}">${n2(w.volumeGal)}</td><td style="${cell}">${n3(w.fraction)}</td><td style="${cell}">${n3(w.delta)}</td></tr>`
+          : `<tr style="color:var(--warn)"><td style="${lcell}">${w.date}</td><td style="${cell}">${n2(w.pAtWc)}</td><td colspan="3" style="${cell}">no volume — skipped ⚠</td></tr>`).join('')
+      : `<tr><td colspan="5" style="${lcell}color:var(--dim)">no water changes in interval</td></tr>`;
+    html += `<div style="margin:10px 0 4px;font-size:12px;"><strong>${p.label}</strong>
+        <span style="font-family:'Space Mono',monospace;font-size:10px;color:#5a8aaa;">${P1} → ${P2} ${p.unit} · Δ ${n2(iv.observed)} · ${iv.days}d · ${FLAG_EMOJI[iv.flag]}${iv.incomplete ? ' ⚠' : ''}</span></div>
+      <table style="width:100%;border-collapse:collapse;">
+        <thead><tr style="color:var(--dim)"><th style="${lcell}">DOSE</th><th style="${cell}">mL</th><th style="${cell}">per mL</th><th style="${cell}">÷ vol L</th><th style="${cell}">= ${p.unit}</th></tr></thead>
+        <tbody>${doseRows}</tbody>
+        <thead><tr style="color:var(--dim)"><th style="${lcell}">WATER CHG</th><th style="${cell}">P@wc</th><th style="${cell}">vol gal</th><th style="${cell}">frac</th><th style="${cell}">= ${p.unit}</th></tr></thead>
+        <tbody>${wcRows}</tbody>
+      </table>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--text);margin:4px 0 2px;">
+        observed ${n2(iv.observed)} − dose ${n2(iv.doseTotal)} − WC ${n2(iv.wcTotal)} = <strong>${n2(iv.trueConsumption)}</strong> ÷ ${iv.days}d = <strong>${n2(iv.rate)} ${p.unit}/day</strong></div>`;
+  });
+  document.getElementById('verifyBody-' + tankKey).innerHTML = html;
 }
 
 // ── TAB SWITCHING

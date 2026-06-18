@@ -26,14 +26,13 @@ const dosing = {
   ],
 };
 const waterChanges = [
-  { date: '2026-05-20', volumeGal: null },
-  { date: '2026-05-26', volumeGal: null },
+  { date: '2026-05-20', volumeGal: 4 },   // 4/20 = 0.20 fraction
+  { date: '2026-05-26', volumeGal: 4 },
 ];
 const t1 = '2026-05-16', t2 = '2026-05-30';
 
 // ── Derived tank values
 eq(C.tankVolumeL(consumption, 'display'), 75.7, 'tankVolumeL 20gal', 0.1);
-eq(C.wcFraction(consumption, 'display'), 0.20, 'wcFraction 4/20', 0.001);
 
 // ── §5.2 dose mL in interval (28 mL AFR over 14 days; 420 mL Balling B)
 eq(C.doseMlInInterval(dosing.doses, 'display', 'afr', t1, t2), 28, 'AFR mL in interval');
@@ -55,20 +54,48 @@ ok(aCa.ballingB === undefined, 'Balling B has no ca contribution');
 const wcCa = C.wcContribution(consumption, waterChanges, 'display', 'ca', 460, 380, t1, t2);
 eq(wcCa.total, 18.0, 'WC ca contribution total', 0.1);
 ok(wcCa.count === 2, 'WC count = 2');
+ok(wcCa.skipped === 0, 'WC skipped = 0 (both have volume)');
+ok(wcCa.items.length === 2 && wcCa.items[0].accounted === true, 'WC items accounted');
+eq(wcCa.items[0].fraction, 0.20, 'WC item fraction 4/20', 0.001);
 const wcAlk = C.wcContribution(consumption, waterChanges, 'display', 'alk', 10.8, 10.8, t1, t2);
 eq(wcAlk.total, 0.68, 'WC alk contribution total');
+
+// ── missing volume → skipped, not subtracted, interval flagged incomplete
+const nullWc = [{date:'2026-05-20', volumeGal:null}, {date:'2026-05-26', volumeGal:4}];
+const wcSkip = C.wcContribution(consumption, nullWc, 'display', 'ca', 460, 380, t1, t2);
+ok(wcSkip.skipped === 1, 'one WC skipped (no volume)');
+ok(wcSkip.count === 1, 'one WC accounted');
+ok(wcSkip.items.find(i => i.date==='2026-05-20').accounted === false, 'null-volume WC marked not accounted');
+ok(approx(wcSkip.total, 12.43, 0.1), 'skipped WC excluded from total (only the 4-gal one counts)');
+
+// ── §5.2/5.3 agent dose detail
+const dd = C.agentDoses(dosing, consumption, 'display', 'alk', t1, t2);
+const afrD = dd.find(d => d.agent === 'afr');
+ok(afrD && afrD.mlDosed === 28, 'agentDoses AFR mLDosed = 28');
+eq(afrD.perMl, 5.6, 'agentDoses AFR perMl');
+eq(afrD.contribution, 2.07, 'agentDoses AFR contribution');
 
 // ── §5.5/5.6 full interval (the worked example)
 const ivAlk = C.computeIntervals({ readings: [{date:t1,value:10.8},{date:t2,value:10.8}], dosing, consumption, waterChanges, tank:'display', param:'alk' });
 ok(ivAlk.length === 1, 'one alk interval');
 eq(ivAlk[0].observed, 0, 'observed alk');
+eq(ivAlk[0].doseTotal, 39.04, 'dose total alk (AFR+BallingB)', 0.1);
+eq(ivAlk[0].wcTotal, 0.68, 'wc total alk', 0.05);
 eq(ivAlk[0].trueConsumption, -39.71, 'true consumption alk', 0.1);
 eq(ivAlk[0].rate, -2.84, 'alk rate dKH/day', 0.02);
 ok(ivAlk[0].flag === 'corrected', 'alk interval flag = corrected (🟡)');
+ok(ivAlk[0].incomplete === false, 'alk interval not incomplete (volumes present)');
+ok(ivAlk[0].doses.length === 2, 'alk interval has 2 dose rows (afr, ballingB)');
 
 const ivCa = C.computeIntervals({ readings: [{date:t1,value:460},{date:t2,value:380}], dosing, consumption, waterChanges, tank:'display', param:'ca' });
 eq(ivCa[0].trueConsumption, -112.79, 'true consumption ca', 0.2);
 eq(ivCa[0].rate, -8.06, 'ca rate ppm/day', 0.02);
+
+// interval with a volume-less water change → incomplete, still averaged
+const ivInc = C.computeIntervals({ readings: [{date:t1,value:460},{date:t2,value:380}], dosing, consumption, waterChanges: nullWc, tank:'display', param:'ca' });
+ok(ivInc[0].incomplete === true, 'interval flagged incomplete when a WC lacks volume');
+ok(ivInc[0].wcSkipped === 1, 'interval wcSkipped = 1');
+ok(C.rollingRate(ivInc, consumption.calc, '2026-05-30').n === 1, 'incomplete interval still counts toward rolling avg');
 
 // ── §5.7 rolling average (single qualifying interval)
 const rrCa = C.rollingRate(ivCa, consumption.calc, '2026-05-30');
