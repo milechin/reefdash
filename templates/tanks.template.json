@@ -2,11 +2,13 @@
   {
     "key":   "display",
     "label": "Display Tank",
-    "emoji": "🐠"
+    "emoji": "🐠",
+    "volumeGal": 20
   },
   {
     "key":   "qrt",
     "label": "Quarantine Tank",
-    "emoji": "🔬"
+    "emoji": "🔬",
+    "volumeGal": 10
   }
 ]

@@ -25,12 +25,13 @@ Open http://localhost:8080. No Node.js, no npm, no build step.
 - `save_equipment.php` — POST endpoint; writes raw JSON body to `config/equipment.json`
 - `save_dosing.php` — POST endpoint; writes raw JSON body to `config/dosing.json`
 - `save_consumption.php` — POST endpoint; writes raw JSON body to `config/consumption.json`
-- `config/tanks.json` — tank definitions: `[{key, label, emoji}]`; drives tabs and panels (gitignored)
+- `save_tanks.php` — POST endpoint; writes raw JSON body to `config/tanks.json` (Tank Settings: name/emoji/volume)
+- `config/tanks.json` — tank definitions: `[{key, label, emoji, volumeGal}]`; drives tabs/panels and is the source of tank volume for consumption (gitignored)
 - `config/targets.json` — persisted min/max target values per parameter (gitignored)
 - `config/equipment.json` — per-tank equipment: `[{tank, item, purchased, expires, comment}]` (gitignored)
 - `config/ui.json` — UI config injected as `UI_CONFIG`: date-range `presets`, `maintenance` recency thresholds, `equipment.expiryWarnDays` (gitignored; PHP head has fallback defaults)
 - `config/dosing.json` — injected as `DOSING`: `{agents:{afr,ballingB,…→{label,perMl:{alk,ca,mg}}}, doses:[{tank,agent,mlPerDay,from,to}]}` for consumption-rate correction (gitignored)
-- `config/consumption.json` — injected as `CONSUMPTION`: `{saltMix:{alk,ca,mg}, calc:{minDays,maxDays,windowDays,outlierFactor}, tanks:{<key>:{volumeGal,wcVolumeGal}}}` (gitignored; PHP head has fallback defaults)
+- `config/consumption.json` — injected as `CONSUMPTION`: `{saltMix:{alk,ca,mg}, calc:{minDays,maxDays,windowDays,outlierFactor}}` (gitignored; PHP head has fallback defaults). Tank volume lives in `tanks.json` (`volumeGal`); the engine reads it via `consumptionCfg()`. A water change without a per-event `volumeGal` is skipped (not estimated).
 - `scripts/migrate.py` — schema migration tool; run from project root: `python3 scripts/migrate.py`
 - `scripts/deploy.sh` — rsync deploy to dev/prod NAS (gitignored)
 - `Fish Tank Log - Display.csv` — source for bulk nitrate import (gitignored)

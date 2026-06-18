@@ -44,7 +44,6 @@ $consumptionConfig = file_exists($consumptionFile) ? (json_decode(file_get_conte
 $consumptionConfig += [
   'saltMix' => ['alk'=>12.5, 'ca'=>465, 'mg'=>1390],
   'calc'    => ['minDays'=>7, 'maxDays'=>30, 'windowDays'=>90, 'outlierFactor'=>3],
-  'tanks'   => new stdClass(),
 ];
 ?>
 <script src="<?php echo htmlspecialchars($tankDataPath); ?>?v=<?php echo $v; ?>"></script>
@@ -428,7 +427,10 @@ tr:last-child td { border:none; }
         <p>// Fish Tank Log Dashboard</p>
       </div>
     </div>
-    <div class="last-badge" id="lastBadge">Last: <strong>—</strong></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="gear-btn" onclick="openTankSettings()" title="Tank names, emoji, volume">⚙ Tanks</button>
+      <div class="last-badge" id="lastBadge">Last: <strong>—</strong></div>
+    </div>
   </header>
 
   <!-- TABS -->
@@ -703,22 +705,39 @@ tr:last-child td { border:none; }
         <input type="number" step="1" class="target-num-input" id="cs_calc_windowDays">
         <input type="number" step="0.1" class="target-num-input" id="cs_calc_outlierFactor">
       </div>
-
-      <div class="slabel">Tank Volume (gal)</div>
-      <div style="display:grid;grid-template-columns:1fr 90px;gap:8px;font-family:'Space Mono',monospace;font-size:9px;color:var(--dim);text-align:center;letter-spacing:0.5px;">
-        <span></span><span>TOTAL&nbsp;(gal)</span>
-      </div>
-      <?php foreach ($tanks as $tank): $k = htmlspecialchars($tank['key']); ?>
-      <div style="display:grid;grid-template-columns:1fr 90px;gap:8px;align-items:center;padding:6px 0;">
-        <label style="font-size:12px;color:var(--dim);"><?php echo htmlspecialchars($tank['label']); ?></label>
-        <input type="number" step="0.1" class="target-num-input" id="cs_vol_<?php echo $k; ?>" title="Total system volume (gallons)" placeholder="total gal">
-      </div>
-      <?php endforeach; ?>
+      <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);margin-top:6px;">Tank volume is set in <strong>⚙ Tanks</strong> (top right).</div>
 
       <div id="consumptionMsg" style="font-family:'Space Mono',monospace;font-size:11px;min-height:18px;margin-top:8px;"></div>
       <div class="modal-footer">
         <button class="btn-reset" onclick="closeConsumptionSettings()">Cancel</button>
         <button class="btn-apply" onclick="submitConsumptionSettings(this)">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="tankModal" onclick="if(event.target===this)closeTankSettings()">
+    <div class="modal" style="max-width:500px">
+      <div class="modal-header">
+        <h2>⚙ Tank Settings</h2>
+        <button class="modal-close" onclick="closeTankSettings()">✕</button>
+      </div>
+      <div style="padding:4px 0 10px; font-family:'Space Mono',monospace; font-size:10px; color:var(--dim);">
+        Rename tanks, set the emoji and total volume (gallons). Saving reloads the page.
+      </div>
+      <div style="display:grid;grid-template-columns:44px 1fr 90px;gap:8px;font-family:'Space Mono',monospace;font-size:9px;color:var(--dim);text-align:center;letter-spacing:0.5px;">
+        <span>EMOJI</span><span style="text-align:left">NAME</span><span>VOL&nbsp;(gal)</span>
+      </div>
+      <?php foreach ($tanks as $tank): $k = htmlspecialchars($tank['key']); ?>
+      <div style="display:grid;grid-template-columns:44px 1fr 90px;gap:8px;align-items:center;padding:5px 0;">
+        <input type="text" class="target-num-input" id="ts_emoji_<?php echo $k; ?>" maxlength="4" style="text-align:center;">
+        <input type="text" class="target-num-input" id="ts_label_<?php echo $k; ?>" style="text-align:left;">
+        <input type="number" step="0.1" min="0" class="target-num-input" id="ts_vol_<?php echo $k; ?>" placeholder="gal">
+      </div>
+      <?php endforeach; ?>
+      <div id="tankMsg" style="font-family:'Space Mono',monospace;font-size:11px;min-height:18px;margin-top:8px;"></div>
+      <div class="modal-footer">
+        <button class="btn-reset" onclick="closeTankSettings()">Cancel</button>
+        <button class="btn-apply" onclick="submitTankSettings(this)">Save</button>
       </div>
     </div>
   </div>
@@ -2320,32 +2339,21 @@ function submitFill(btn) {
 function closeConsumptionSettings() { document.getElementById('consumptionModal').classList.remove('open'); }
 
 function openConsumptionSettings() {
-  const c = CONSUMPTION, sm = c.saltMix || {}, ca = c.calc || {}, tk = c.tanks || {};
+  const c = CONSUMPTION, sm = c.saltMix || {}, ca = c.calc || {};
   document.getElementById('consumptionMsg').textContent = '';
   const set = (id, v) => { document.getElementById(id).value = (v === undefined || v === null) ? '' : v; };
   set('cs_salt_label', sm.label); set('cs_salt_alk', sm.alk); set('cs_salt_ca', sm.ca); set('cs_salt_mg', sm.mg);
   set('cs_calc_minDays', ca.minDays); set('cs_calc_maxDays', ca.maxDays);
   set('cs_calc_windowDays', ca.windowDays); set('cs_calc_outlierFactor', ca.outlierFactor);
-  TANK_CONFIGS.forEach(t => {
-    const v = tk[t.key] || {};
-    set('cs_vol_' + t.key, v.volumeGal);
-  });
   document.getElementById('consumptionModal').classList.add('open');
 }
 
 function submitConsumptionSettings(btn) {
   const msg = document.getElementById('consumptionMsg');
   const num = id => { const x = parseFloat(document.getElementById(id).value); return isNaN(x) ? null : x; };
-  const tanks = {};
-  for (const t of TANK_CONFIGS) {
-    const vol = num('cs_vol_' + t.key);
-    if (vol !== null && vol <= 0) { msg.style.color = '#e74c3c'; msg.textContent = `${t.label}: tank volume must be > 0.`; return; }
-    tanks[t.key] = { volumeGal: vol };
-  }
   const snap = JSON.parse(JSON.stringify(CONSUMPTION));
   CONSUMPTION.saltMix = { label: document.getElementById('cs_salt_label').value.trim(), alk: num('cs_salt_alk'), ca: num('cs_salt_ca'), mg: num('cs_salt_mg') };
   CONSUMPTION.calc = { minDays: num('cs_calc_minDays'), maxDays: num('cs_calc_maxDays'), windowDays: num('cs_calc_windowDays'), outlierFactor: num('cs_calc_outlierFactor') };
-  CONSUMPTION.tanks = tanks;
 
   setSaving(btn, true);
   fetch('save_consumption.php', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(CONSUMPTION)})
@@ -2354,15 +2362,50 @@ function submitConsumptionSettings(btn) {
       setSaving(btn, false);
       if (res.ok) { rebuildEquipViews(); closeConsumptionSettings(); }
       else {
-        CONSUMPTION.saltMix = snap.saltMix; CONSUMPTION.calc = snap.calc; CONSUMPTION.tanks = snap.tanks;
+        CONSUMPTION.saltMix = snap.saltMix; CONSUMPTION.calc = snap.calc;
         msg.style.color = '#e74c3c'; msg.textContent = '✗ Server error: ' + res.error;
       }
     })
     .catch(() => {
       setSaving(btn, false);
-      CONSUMPTION.saltMix = snap.saltMix; CONSUMPTION.calc = snap.calc; CONSUMPTION.tanks = snap.tanks;
+      CONSUMPTION.saltMix = snap.saltMix; CONSUMPTION.calc = snap.calc;
       msg.style.color = '#f39c12'; msg.textContent = '✗ Could not reach server.';
     });
+}
+
+// ── TANK SETTINGS (name / emoji / volume → tanks.json)
+function closeTankSettings() { document.getElementById('tankModal').classList.remove('open'); }
+
+function openTankSettings() {
+  document.getElementById('tankMsg').textContent = '';
+  TANK_CONFIGS.forEach(t => {
+    document.getElementById('ts_emoji_' + t.key).value = t.emoji || '';
+    document.getElementById('ts_label_' + t.key).value = t.label || '';
+    document.getElementById('ts_vol_' + t.key).value   = (t.volumeGal == null) ? '' : t.volumeGal;
+  });
+  document.getElementById('tankModal').classList.add('open');
+}
+
+function submitTankSettings(btn) {
+  const msg = document.getElementById('tankMsg');
+  const updated = [];
+  for (const t of TANK_CONFIGS) {
+    const label = document.getElementById('ts_label_' + t.key).value.trim();
+    const emoji = document.getElementById('ts_emoji_' + t.key).value.trim();
+    const volRaw = document.getElementById('ts_vol_' + t.key).value.trim();
+    if (!label) { msg.style.color = '#e74c3c'; msg.textContent = 'Each tank needs a name.'; return; }
+    const volumeGal = volRaw === '' ? null : parseFloat(volRaw);
+    if (volumeGal !== null && (isNaN(volumeGal) || volumeGal <= 0)) { msg.style.color = '#e74c3c'; msg.textContent = `${label}: volume must be > 0 (or blank).`; return; }
+    updated.push({ key: t.key, label, emoji, volumeGal });   // key is immutable (referenced everywhere)
+  }
+  setSaving(btn, true);
+  fetch('save_tanks.php', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(updated)})
+    .then(r => r.json())
+    .then(res => {
+      if (res.ok) { location.reload(); }   // tabs/labels are server-rendered — reload to apply
+      else { setSaving(btn, false); msg.style.color = '#e74c3c'; msg.textContent = '✗ Server error: ' + res.error; }
+    })
+    .catch(() => { setSaving(btn, false); msg.style.color = '#f39c12'; msg.textContent = '✗ Could not reach server.'; });
 }
 
 // ── CONSUMPTION RESULTS (computed on every panel build)
@@ -2373,8 +2416,16 @@ const CONSUMPTION_PARAMS = [
 ];
 const FLAG_EMOJI = {clean:'✅', corrected:'🟡', noisy:'🔴'};
 
+// Consumption config for the engine, with per-tank volumes sourced from TANK_CONFIGS (tanks.json).
+function consumptionCfg() {
+  const tanks = {};
+  TANK_CONFIGS.forEach(t => { tanks[t.key] = { volumeGal: t.volumeGal }; });
+  return Object.assign({}, CONSUMPTION, { tanks });
+}
+
 function consumptionHtml(tankKey) {
   const td = RAW[tankKey];
+  const cc = consumptionCfg();
   const today = new Date().toISOString().split('T')[0];
   const hasDosing = DOSING.doses.some(d => d.tank === tankKey);
   let rows = '';
@@ -2384,7 +2435,7 @@ function consumptionHtml(tankKey) {
       .map(r => ({date: r.date, value: r[p.valKey]}));
     const blank = txt => `<tr><td style="font-size:11px">${p.label}</td><td colspan="3" style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim)">${txt}</td></tr>`;
     if (readings.length < 2) { rows += blank('awaiting data'); return; }
-    const intervals = Consumption.computeIntervals({readings, dosing:DOSING, consumption:CONSUMPTION, waterChanges:WATER_CHANGES[tankKey]||[], tank:tankKey, param:p.key});
+    const intervals = Consumption.computeIntervals({readings, dosing:DOSING, consumption:cc, waterChanges:WATER_CHANGES[tankKey]||[], tank:tankKey, param:p.key});
     const rr = Consumption.rollingRate(intervals, CONSUMPTION.calc, today);
     if (rr.avgRate === null) { rows += blank('no qualifying intervals'); return; }
     const iv = rr.latest;
@@ -2414,7 +2465,7 @@ function toggleVerify(tankKey) {
 
 function renderVerifyPanel(tankKey) {
   const alk = (RAW[tankKey].alk || []).filter(r => r.ALK != null).map(r => ({date: r.date, value: r.ALK}));
-  const ivs = Consumption.computeIntervals({readings: alk, dosing: DOSING, consumption: CONSUMPTION, waterChanges: WATER_CHANGES[tankKey] || [], tank: tankKey, param: 'alk'});
+  const ivs = Consumption.computeIntervals({readings: alk, dosing: DOSING, consumption: consumptionCfg(), waterChanges: WATER_CHANGES[tankKey] || [], tank: tankKey, param: 'alk'});
   const panel = document.getElementById('verifyPanel-' + tankKey);
   if (!ivs.length) { panel.innerHTML = `<div class="tcard" style="padding:10px;font-family:'Space Mono',monospace;font-size:11px;color:var(--dim)">Not enough water tests to verify (need ≥2 Alk readings).</div>`; return; }
   const recent = ivs.slice(-24).reverse();  // newest first
@@ -2438,7 +2489,8 @@ function onVerifySelect(tankKey) {
 function selectVerifyInterval(tankKey, t1, t2) {
   const td = RAW[tankKey];
   const wc = WATER_CHANGES[tankKey] || [];
-  const volL = Consumption.tankVolumeL(CONSUMPTION, tankKey);
+  const cc = consumptionCfg();
+  const volL = Consumption.tankVolumeL(cc, tankKey);
   const n3 = x => (x == null ? '—' : (+x).toFixed(3));
   const n2 = x => (x == null ? '—' : (+x).toFixed(2));
   const cell = "font-family:'Space Mono',monospace;font-size:9px;padding:2px 5px;text-align:center;";
@@ -2451,7 +2503,7 @@ function selectVerifyInterval(tankKey, t1, t2) {
       html += `<div style="margin:8px 0;font-size:11px"><strong>${p.label}</strong> <span style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim)">— no reading at both test dates</span></div>`;
       return;
     }
-    const iv = Consumption.computeIntervals({readings: [{date:t1,value:P1},{date:t2,value:P2}], dosing: DOSING, consumption: CONSUMPTION, waterChanges: wc, tank: tankKey, param: p.key})[0];
+    const iv = Consumption.computeIntervals({readings: [{date:t1,value:P1},{date:t2,value:P2}], dosing: DOSING, consumption: cc, waterChanges: wc, tank: tankKey, param: p.key})[0];
     const doseRows = iv.doses.length
       ? iv.doses.map(d => `<tr><td style="${lcell}">${d.label}</td><td style="${cell}">${n2(d.mlDosed)}</td><td style="${cell}">${n3(d.perMl)}</td><td style="${cell}">${n3(d.perMlPerL)}</td><td style="${cell}">${n3(d.contribution)}</td></tr>`).join('')
       : `<tr><td colspan="5" style="${lcell}color:var(--dim)">no dosing in interval</td></tr>`;
