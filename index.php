@@ -2481,12 +2481,23 @@ function renderConsumptionCharts(panelId, tankKey) {
     const points = allIv
       .filter(iv => (!dateFrom || iv.t2 >= dateFrom) && (!dateTo || iv.t2 <= dateTo))
       .map(iv => ({x: iv.t2, y: iv.rate, flag: iv.flag, incomplete: iv.incomplete, t1: iv.t1, days: iv.days}));
-    makeConsumptionChart(id, points, p.color, p.unit, rr.avgRate);
+    makeConsumptionChart(id, points, p.color, p.unit, rr.avgRate, tankKey);
   });
 }
 
+// Open the Verify panel for a tank at a specific interval (used by clicking a trend point).
+function openVerifyAt(tankKey, t1, t2) {
+  const panel = document.getElementById('verifyPanel-' + tankKey);
+  if (!panel) return;
+  if (panel.style.display === 'none') { panel.style.display = 'block'; renderVerifyPanel(tankKey); }
+  const sel = document.getElementById('verifySel-' + tankKey);
+  if (sel) { const val = t1 + '|' + t2; if ([...sel.options].some(o => o.value === val)) sel.value = val; }
+  selectVerifyInterval(tankKey, t1, t2);
+  panel.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+}
+
 // Lightweight rate-over-time chart (one consumption point per interval, at its end date).
-function makeConsumptionChart(id, points, color, unit, avgRate) {
+function makeConsumptionChart(id, points, color, unit, avgRate, tankKey) {
   if (charts[id]) { try { charts[id].destroy(); } catch(e) {} delete charts[id]; }
   const ctx = document.getElementById(id);
   if (!ctx) return;
@@ -2513,6 +2524,12 @@ function makeConsumptionChart(id, points, color, unit, avgRate) {
     options: {
       responsive: true, maintainAspectRatio: true, clip: false,
       interaction: {mode: 'index', intersect: false},
+      onClick(evt, els) {
+        if (!els.length) return;
+        const p = points[els[0].index];
+        openVerifyAt(tankKey, p.t1, p.x);
+      },
+      onHover(evt, els) { if (evt.native) evt.native.target.style.cursor = els.length ? 'pointer' : ''; },
       plugins: {
         legend: {display: false},
         tooltip: {
@@ -2520,7 +2537,7 @@ function makeConsumptionChart(id, points, color, unit, avgRate) {
           titleFont: {family: 'Space Mono', size: 10}, bodyFont: {family: 'DM Sans'},
           callbacks: { label: item => {
             const p = points[item.dataIndex];
-            return `${p.y.toFixed(2)} ${unit}/day · ${p.t1}→${p.x} (${p.days}d)${p.incomplete ? ' ⚠' : ''}`;
+            return `${p.y.toFixed(2)} ${unit}/day · ${p.t1}→${p.x} (${p.days}d)${p.incomplete ? ' ⚠' : ''} · click to verify`;
           }}
         },
         annotation: {annotations}
