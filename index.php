@@ -2168,9 +2168,9 @@ function submitDosing(btn) {
     document.getElementById('dosingMsg').textContent = 'Pick an agent.';
     return;
   }
-  if (isNaN(mlPerDay) || mlPerDay <= 0) {
+  if (isNaN(mlPerDay) || mlPerDay < 0) {
     document.getElementById('dosingMsg').style.color = '#e74c3c';
-    document.getElementById('dosingMsg').textContent = 'Enter a mL/day greater than 0.';
+    document.getElementById('dosingMsg').textContent = 'Enter a mL/day of 0 or more (no negatives).';
     return;
   }
   if (to && from && to < from) {
