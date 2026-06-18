@@ -2475,32 +2475,50 @@ function consumptionHtml(tankKey) {
   const hasDosing = DOSING.doses.some(d => d.tank === tankKey);
   const volL = Consumption.tankVolumeL(cc, tankKey);
   const afrPerMlOf = param => (DOSING.agents.afr && DOSING.agents.afr.perMl) ? DOSING.agents.afr.perMl[param] : null;
+  const minD = CONSUMPTION.calc.minDays || 7, maxD = CONSUMPTION.calc.maxDays || 30;
   let rows = '';
   CONSUMPTION_PARAMS.forEach(p => {
     const readings = (td[p.array] || [])
       .filter(r => r[p.valKey] !== null && r[p.valKey] !== undefined)
       .map(r => ({date: r.date, value: r[p.valKey]}));
-    const blank = txt => `<tr><td style="font-size:11px">${p.label}</td><td colspan="4" style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim)">${txt}</td></tr>`;
+    const blank = txt => `<tr><td style="font-size:11px">${p.label}</td><td colspan="3" style="font-family:'Space Mono',monospace;font-size:10px;color:var(--dim)">${txt}</td></tr>`;
     if (readings.length < 2) { rows += blank('awaiting data'); return; }
     const intervals = Consumption.computeIntervals({readings, dosing:DOSING, consumption:cc, waterChanges:WATER_CHANGES[tankKey]||[], tank:tankKey, param:p.key});
-    const rr = Consumption.rollingRate(intervals, CONSUMPTION.calc, today);
-    if (rr.avgRate === null) { rows += blank('no qualifying intervals'); return; }
-    const iv = rr.latest;
-    const warn = iv.incomplete ? ' ⚠' : '';
-    const bd = `latest ${iv.t1}→${iv.t2} (${iv.days}d): observed ${iv.observed.toFixed(2)}, −dose ${iv.doseTotal.toFixed(2)}, −WC ${iv.wcTotal.toFixed(2)} = ${iv.trueConsumption.toFixed(2)}${iv.incomplete ? ' (a water change had no volume — skipped)' : ''}`;
-    // AFR mL/day that would offset this consumption: |rate| × tankL ÷ AFR per-mL contribution
+    // The most recent valid-length intervals, newest first (latest + the two before it)
+    const recent = intervals.filter(iv => iv.days >= minD && iv.days <= maxD).slice(-3).reverse();
+    if (!recent.length) { rows += blank('no recent intervals'); return; }
+    const latest = recent[0];
+
+    const ratesHtml = recent.map((iv, i) => {
+      if (i === 0) {
+        const bd = `${iv.t1}→${iv.t2} (${iv.days}d): observed ${iv.observed.toFixed(2)}, −dose ${iv.doseTotal.toFixed(2)}, −WC ${iv.wcTotal.toFixed(2)} = ${iv.trueConsumption.toFixed(2)}${iv.incomplete ? ' (WC volume missing — skipped)' : ''}`;
+        return `<span title="${bd}" style="color:var(--text);cursor:help">${iv.rate.toFixed(2)} ${p.unit}/day ${FLAG_EMOJI[iv.flag]}${iv.incomplete ? '⚠' : ''}</span>`;
+      }
+      return `<span title="${iv.t1}→${iv.t2} (${iv.days}d)" style="color:#5a8aaa">${iv.rate.toFixed(2)}</span>`;
+    }).join('<span style="color:var(--dim)"> · </span>');
+
+    let trendHtml = '<span style="color:#5a8aaa">—</span>';
+    if (recent.length >= 2) {
+      const d = recent[0].rate - recent[1].rate;   // < 0 → more negative now → consuming more
+      const eps = 0.03 * (Math.abs(recent[1].rate) || 1);
+      if (d < -eps)      trendHtml = '<span style="color:#e74c3c" title="consuming more than before">▲ rising</span>';
+      else if (d > eps)  trendHtml = '<span style="color:#2ecc71" title="consuming less than before">▼ easing</span>';
+      else               trendHtml = '<span style="color:#5a8aaa" title="roughly unchanged">→ steady</span>';
+    }
+
+    // AFR mL/day that would offset the LATEST rate: |rate| × tankL ÷ AFR per-mL contribution
     const afrPerMl = afrPerMlOf(p.key);
-    const afrTxt = (afrPerMl && volL && rr.avgRate < 0) ? (Math.abs(rr.avgRate) * volL / afrPerMl).toFixed(1) : '—';
+    const afrTxt = (afrPerMl && volL && latest.rate < 0) ? (Math.abs(latest.rate) * volL / afrPerMl).toFixed(1) : '—';
+
     rows += `<tr>
       <td style="font-size:11px">${p.label}</td>
-      <td style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text)">${rr.avgRate.toFixed(2)} ${p.unit}/day</td>
-      <td title="AFR mL/day to offset this consumption" style="font-family:'Space Mono',monospace;font-size:11px;color:#fb7185">${afrTxt}</td>
-      <td style="font-family:'Space Mono',monospace;font-size:9px;color:#5a8aaa">${rr.n}×</td>
-      <td title="${bd}" style="font-family:'Space Mono',monospace;font-size:9px;color:#5a8aaa;cursor:help">${FLAG_EMOJI[iv.flag]} ${iv.rate.toFixed(2)}${warn}</td>
+      <td style="font-family:'Space Mono',monospace;font-size:10px">${ratesHtml}</td>
+      <td style="font-family:'Space Mono',monospace;font-size:10px">${trendHtml}</td>
+      <td title="AFR mL/day to offset the latest rate" style="font-family:'Space Mono',monospace;font-size:11px;color:#fb7185">${afrTxt}</td>
     </tr>`;
   });
-  let h = `<div class="slabel">⚖️ Consumption <span style="font-weight:400;color:var(--dim);font-size:10px;text-transform:none;letter-spacing:0;">${CONSUMPTION.calc.windowDays || 90}-day avg daily rate</span> <button onclick="toggleVerify('${tankKey}')" style="font-family:'Space Mono',monospace;font-size:11px;padding:4px 10px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.35);color:#a78bfa;border-radius:4px;cursor:pointer;letter-spacing:0.5px;text-transform:none;">🔍 Verify calc</button> <button onclick="openConsumptionSettings()" title="Salt mix, calc, tank volumes" style="font-family:'Space Mono',monospace;font-size:11px;padding:4px 10px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.35);color:var(--biolume);border-radius:4px;cursor:pointer;letter-spacing:0.5px;text-transform:none;">⚙ Settings</button></div>`;
-  h += `<div class="tcard"><table><thead><tr><th>PARAM</th><th>RATE</th><th>AFR mL/d</th><th>N</th><th>LATEST</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  let h = `<div class="slabel">⚖️ Consumption <span style="font-weight:400;color:var(--dim);font-size:10px;text-transform:none;letter-spacing:0;">latest daily rate · newest first</span> <button onclick="toggleVerify('${tankKey}')" style="font-family:'Space Mono',monospace;font-size:11px;padding:4px 10px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.35);color:#a78bfa;border-radius:4px;cursor:pointer;letter-spacing:0.5px;text-transform:none;">🔍 Verify calc</button> <button onclick="openConsumptionSettings()" title="Salt mix, calc, tank volumes" style="font-family:'Space Mono',monospace;font-size:11px;padding:4px 10px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.35);color:var(--biolume);border-radius:4px;cursor:pointer;letter-spacing:0.5px;text-transform:none;">⚙ Settings</button></div>`;
+  h += `<div class="tcard"><table><thead><tr><th>PARAM</th><th>RECENT RATE (newest · prior 2)</th><th>TREND</th><th>AFR mL/d</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   if (!hasDosing) h += `<div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--warn);margin-top:4px;">No dosing configured — rates are not corrected for supplements.</div>`;
   h += `<div id="verifyPanel-${tankKey}" style="display:none;margin-top:8px;"></div>`;
 
